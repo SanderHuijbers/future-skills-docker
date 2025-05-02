@@ -212,7 +212,7 @@ De 2 containers kunnen elkaar niet goed bereiken, en dat wordt wel gedaan in opd
 
 ### Opdracht 3
 
-#### Maak een ./docker-compose.yaml file aan
+#### Maak een ./docker-compose.yml file aan
 
 ```yaml
 # docker-compose.yml
