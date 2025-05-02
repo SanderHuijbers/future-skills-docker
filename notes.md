@@ -68,7 +68,11 @@ EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 
 ```
+#### Debuggen
 
+```bash
+docker run --rm -it my-web-server2-alpine cat /etc/nginx/nginx.conf
+```
 
 #### Testen
 
