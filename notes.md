@@ -76,12 +76,18 @@ docker run --rm -it my-web-server2-alpine cat /etc/nginx/nginx.conf
 
 #### Testen
 
-`curl http://localhost:8080`
+```bash
+curl http://localhost:8080
+```
 
 #### opruimen
-`docker stop web-alpine`
+```bash
+docker stop web-alpine
+```
 
-`docker rm web-alpine`
+```bash
+docker rm web-alpine
+```
 
 
 
@@ -193,4 +199,71 @@ server {
     error_log /var/log/nginx/error.log;
 }
 
+```
+
+#### Bouwen van de reverse-proxy container
+
+```bash
+docker build -t my-reverse-proxy -f Dockerfile.reverse-proxy .
+```
+
+#### Conclusie
+De 2 containers kunnen elkaar niet goed bereiken, en dat wordt wel gedaan in opdracht 3
+
+### Opdracht 3
+
+#### Maak een ./docker-compose.yaml file aan
+
+```yaml
+# docker-compose.yml
+# Definieert de webserver en reverse proxy services in een custom netwerk
+
+version: '3.8' # Gebruik een recente Docker Compose versie
+
+services:
+
+  # Service voor de statische webserver
+  webserver:
+    image: my-web-server2-alpine # Gebruik de naam van jouw webserver image
+    container_name: web-alpine # Optionele, maar handige, containernaam
+    build:
+      context: ./webserver # Ga ervan uit dat je Dockerfile en index.html hier staan
+      dockerfile: Dockerfile # De naam van je Dockerfile voor de webserver
+    # BELANGRIJK: Map poort 80 van de webserver container NIET naar de host.
+    # De reverse proxy regelt de toegang.
+    # ports:
+    #   - "80:80" # DEZE REGEL UITCOMMENTARIEREN OF VERWIJDEREN!
+    networks:
+      - web-network # Plaats deze service in ons custom netwerk
+    restart: always # Start automatisch opnieuw op
+
+  # Service voor de Nginx reverse proxy
+  reverse-proxy:
+    image: my-reverse-proxy # Gebruik de naam van jouw reverse proxy image
+    container_name: reverse-proxy # Optionele, maar handige, containernaam
+    build:
+      context: ./reverse-proxy # Ga ervan uit dat je Dockerfile en reverse_proxy.conf hier staan
+      dockerfile: Dockerfile.reverse-proxy # De naam van je Dockerfile voor de reverse proxy
+    ports:
+      - "80:80"   # Map poort 80 van de container naar poort 80 op de host
+      - "443:443" # Map poort 443 van de container naar poort 443 op de host
+    networks:
+      - web-network # Plaats deze service in ons custom netwerk
+    restart: always # Start automatisch opnieuw op
+    # Zorg ervoor dat de webserver service is opgestart voordat de reverse proxy start (optioneel maar goed voor afhankelijkheden)
+    depends_on:
+      - webserver
+
+# Definieer het custom netwerk
+networks:
+  web-network:
+    driver: bridge # Gebruik het standaard bridge netwerk type
+    name: my-web-platform-network # Geef het netwerk een duidelijke naam
+
+```
+
+#### Compose het ./docker-compose.yaml
+
+```bash
+docker compose up -d
 ```
