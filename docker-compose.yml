@@ -11,7 +11,7 @@ services:
     container_name: web-alpine # Optionele, maar handige, containernaam
     build:
       context: ./webserver # Ga ervan uit dat je Dockerfile en index.html hier staan
-      dockerfile: Dockerfile # De naam van je Dockerfile voor de webserver
+      dockerfile: Dockerfile.webserver # De naam van je Dockerfile voor de webserver
     # BELANGRIJK: Map poort 80 van de webserver container NIET naar de host.
     # De reverse proxy regelt de toegang.
     # ports:

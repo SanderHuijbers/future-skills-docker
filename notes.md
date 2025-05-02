@@ -1,7 +1,7 @@
 ## Fase 1
 
 ### Opdracht 1
-/webserver/Dockerfile gemaakt
+/webserver/Dockerfile.webserver gemaakt
 
 /webserver/index.html gamaakt
 
@@ -41,10 +41,10 @@ Herstart de Nginx-server in de container:
 `docker exec -it web-alpine nginx -s reload`
 
 Het handmatig aanpassen van de nginx.conf is niet de bedoeling. Ik heb dit opgelost door een los bestand webserver/webserver.conf en een extra copy commando aan de Dockerfile toe te voegen.
-Dit is de inhoud van het nieuwe /webserver/Dockerfile
+Dit is de inhoud van het nieuwe /webserver/Dockerfile.webserver
 
 ```dockerfile
-# Dockerfile voor de webserver
+# Dockerfile.webserver voor de webserver
 FROM alpine:latest
 
 # Installeer Nginx
@@ -97,7 +97,7 @@ docker rm web-alpine
 #### Bouwen ./reverse-proxy/Dockerfile
 
 ```Dockerfile
-# Dockerfile voor de Reverse Proxy
+# Dockerfile.reverse-proxy voor de Reverse Proxy
 FROM alpine:latest
 
 # Installeer Nginx
@@ -231,7 +231,7 @@ services:
     container_name: web-alpine # Optionele, maar handige, containernaam
     build:
       context: ./webserver # Ga ervan uit dat je Dockerfile en index.html hier staan
-      dockerfile: Dockerfile # De naam van je Dockerfile voor de webserver
+      dockerfile: Dockerfile.webserver # De naam van je Dockerfile voor de webserver
     # BELANGRIJK: Map poort 80 van de webserver container NIET naar de host.
     # De reverse proxy regelt de toegang.
     # ports:
@@ -262,6 +262,7 @@ networks:
   web-network:
     driver: bridge # Gebruik het standaard bridge netwerk type
     name: my-web-platform-network # Geef het netwerk een duidelijke naam
+
 
 ```
 
