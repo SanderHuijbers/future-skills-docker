@@ -90,8 +90,6 @@ docker rm web-alpine
 ```
 
 
-
-
 ### Opdracht 2
 
 #### Bouwen ./reverse-proxy/Dockerfile
@@ -164,43 +162,45 @@ server {
 
 # HTTPS Server blok
 # Vereist SSL/TLS certificaten
-server {
-    # Correcte syntax voor http2 in nieuwere Nginx versies
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-    server_name _; # Luister op elke hostnaam
+# Tijdelijk uitgecommentarieerd omdat we nog geen certificaten hebben.
+# We zullen dit in Fase 3 activeren en configureren met self-signed certificaten.
+# server {
+#     # Correcte syntax voor http2 in nieuwere Nginx versies
+#     listen 443 ssl http2;
+#     listen [::]:443 ssl http2;
+#     server_name _; # Luister op elke hostnaam
 
-    # === SSL/TLS Configuratie ===
-    # VERVANG DEZE DOOR JE EIGEN CERTIFICATEN
-    # Dit zijn placeholder paden en bestanden!
-    # We zullen later self-signed certificaten genereren en hier plaatsen.
-    ssl_certificate /etc/nginx/ssl/nginx.crt;
-    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+#     # === SSL/TLS Configuratie ===
+#     # VERVANG DEZE DOOR JE EIGEN CERTIFICATEN
+#     # Dit zijn placeholder paden en bestanden!
+#     # We zullen later self-signed certificaten genereren en hier plaatsen.
+#     ssl_certificate /etc/nginx/ssl/nginx.crt;
+#     ssl_certificate_key /etc/nginx/ssl/nginx.key;
 
-    # Optionele SSL/TLS settings voor betere beveiliging (aanbevolen)
-    # ssl_session_cache wordt al gedefinieerd in de hoofd nginx.conf, dus verwijderen we het hier.
-    # ssl_session_cache shared:SSL:10m; # <-- VERWIJDERD
-    ssl_session_timeout 10m;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA256:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256';
-    ssl_prefer_server_ciphers on;
-    ssl_session_tickets off; # Vaak aanbevolen voor beveiliging
+#     # Optionele SSL/TLS settings voor betere beveiliging (aanbevolen)
+#     # ssl_session_cache wordt al gedefinieerd in de hoofd nginx.conf, dus verwijderen we het hier.
+#     # ssl_session_cache shared:SSL:10m; # <-- VERWIJDERD
+#     ssl_session_timeout 10m;
+#     ssl_protocols TLSv1.2 TLSv1.3;
+#     ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA256:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256';
+#     ssl_prefer_server_ciphers on;
+#     ssl_session_tickets off; # Vaak aanbevolen voor beveiliging
 
-    location / {
-        # Stuur verkeer door naar de backend webserver gedefinieerd in de upstream
-        proxy_pass http://backend_webserver;
+#     location / {
+#         # Stuur verkeer door naar de backend webserver gedefinieerd in de upstream
+#         proxy_pass http://backend_webserver;
 
-        # Voeg standaard headers toe voor proxying
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
+#         # Voeg standaard headers toe voor proxying
+#         proxy_set_header Host $host;
+#         proxy_set_header X-Real-IP $remote_addr;
+#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#         proxy_set_header X-Forwarded-Proto $scheme;
+#     }
 
-    # Optioneel: Verbeter logging
-    access_log /var/log/nginx/access.log;
-    error_log /var/log/nginx/error.log;
-}
+#     # Optioneel: Verbeter logging
+#     access_log /var/log/nginx/access.log;
+#     error_log /var/log/nginx/error.log;
+# }
 
 ```
 
@@ -271,3 +271,10 @@ networks:
 ```bash
 docker compose up -d
 ```
+
+#### Conclusie
+
+Om de docker compose goe te laten werken moest in docker compose eerst installeren. Daarna heb ik het https gedeelte uit de reverse-proxy.conf moeten uitcommentarieeren.
+
+### Opdracht 4
+
