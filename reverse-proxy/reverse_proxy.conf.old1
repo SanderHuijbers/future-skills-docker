@@ -1,15 +1,8 @@
-# Definieer de backend webservers
+# Definieer de backend webservers. Deze werkte aan het einde van fase 1
 # Gebruik hier de naam van de webserver container of de service naam in een Docker Compose netwerk
 upstream backend_webserver {
     # De naam 'web-alpine' is de containernaam die we in docker-compose.yml hebben gedefinieerd.
     server web-alpine:80;
-}
-
-# Definieer de backend API server
-upstream backend_api {
-    # De naam 'api-server' is de containernaam die we in docker-compose.yml hebben gedefinieerd.
-    # De Flask app luistert op poort 5000.
-    server api-server:5000;
 }
 
 server {
@@ -31,24 +24,8 @@ server {
     # HTTP naar HTTPS redirect (optioneel, maar aanbevolen voor HTTPS)
     # return 301 https://$host$request_uri;
 
-    # === Fase 2, Taak 2: Routing voor statische site en API ===
-
-    # Routeer verkeer naar de API server op /api
-    location /api {
-        # Stuur verkeer door naar de backend API server
-        proxy_pass http://backend_api;
-
-        # Voeg standaard headers toe voor proxying
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # Routeer overig verkeer (statische site) naar de webserver
     location / {
-        # Probeer eerst het bestand zelf te vinden, dan als map, anders 404
-        # Dit is de configuratie van je webserver, maar nu via de proxy
+        # Stuur verkeer door naar de backend webserver gedefinieerd in de upstream
         proxy_pass http://backend_webserver;
 
         # Voeg standaard headers toe voor proxying
