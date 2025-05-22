@@ -1,25 +1,29 @@
 # Dockerfile voor de webserver
 FROM alpine:latest
 
-# Installeer Nginx
-RUN apk add --no-cache nginx
+# Installeer Nginx en curl (voor de healthcheck)
+RUN apk add --no-cache nginx curl
 
 # Kopieer de statische HTML pagina
 COPY index.html /usr/share/nginx/html/
 
-# Voorbeeld in Dockerfile na COPY index.html
+# Stel expliciet de permissies in voor de HTML-pagina
 RUN chmod 644 /usr/share/nginx/html/index.html
 
 # Kopieer de custom Nginx configuratie
-# Dit overschrijft/plaatst de default site configuratie
 COPY webserver.conf /etc/nginx/http.d/default.conf
 
-# Maak log directories (Nginx draait vaak als non-root in productie, alhoewel de default Alpine image het als root start)
-# RUN mkdir -p /var/log/nginx && \
-#     chown -R nginx:nginx /var/log/nginx # Als je Nginx als 'nginx' user zou draaien
+# Maak log directories en stel de eigenaar in (goede praktijk)
+RUN mkdir -p /var/log/nginx && \
+    chown -R nginx:nginx /var/log/nginx
 
 # Expose poort 80 (informatief voor Docker, niet functioneel voor host mapping)
 EXPOSE 80
+
+# HEALTHCHECK instructie
+# Controleert of Nginx op poort 80 reageert
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD curl --fail http://localhost:80 || exit 1
 
 # Start Nginx in de foreground
 CMD ["nginx", "-g", "daemon off;"]
