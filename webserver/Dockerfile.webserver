@@ -7,6 +7,9 @@ RUN apk add --no-cache nginx
 # Kopieer de statische HTML pagina
 COPY index.html /usr/share/nginx/html/
 
+# Voorbeeld in Dockerfile na COPY index.html
+RUN chmod 644 /usr/share/nginx/html/index.html
+
 # Kopieer de custom Nginx configuratie
 # Dit overschrijft/plaatst de default site configuratie
 COPY webserver.conf /etc/nginx/http.d/default.conf

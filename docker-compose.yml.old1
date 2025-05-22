@@ -1,5 +1,5 @@
-# docker-compose.yml
-# Definieert de webserver, reverse proxy en API services in een custom netwerk
+# docker-compose.yml Dit bestand werkte aan het einde van Fase1
+# Definieert de webserver en reverse proxy services in een custom netwerk
 
 version: '3.8' # Gebruik een recente Docker Compose versie
 
@@ -10,7 +10,7 @@ services:
     image: my-web-server2-alpine # Gebruik de naam van jouw webserver image
     container_name: web-alpine # Optionele, maar handige, containernaam
     build:
-      context: ./webserver # Ga ervan uit dat je Dockerfile.webserver en index.html hier staan
+      context: ./webserver # Ga ervan uit dat je Dockerfile en index.html hier staan
       dockerfile: Dockerfile.webserver # De naam van je Dockerfile voor de webserver
     # BELANGRIJK: Map poort 80 van de webserver container NIET naar de host.
     # De reverse proxy regelt de toegang.
@@ -20,27 +20,12 @@ services:
       - web-network # Plaats deze service in ons custom netwerk
     restart: always # Start automatisch opnieuw op
 
-  # Service voor de backend API applicatie
-  api-server:
-    image: my-api-server # Naam voor de API server image
-    container_name: api-server # Optionele, maar handige, containernaam
-    build:
-      context: ./api-server # Ga ervan uit dat je Dockerfile.api-server, app.py en requirements.txt hier staan
-      dockerfile: Dockerfile.api-server # De naam van je Dockerfile voor de API server
-    # BELANGRIJK: Map poort 5000 van de API container NIET naar de host.
-    # De reverse proxy regelt de toegang.
-    # ports:
-    #   - "5000:5000" # DEZE REGEL UITCOMMENTARIEREN OF VERWIJDEREN!
-    networks:
-      - web-network # Plaats deze service in ons custom netwerk
-    restart: always # Start automatisch opnieuw op
-
   # Service voor de Nginx reverse proxy
   reverse-proxy:
     image: my-reverse-proxy # Gebruik de naam van jouw reverse proxy image
     container_name: reverse-proxy # Optionele, maar handige, containernaam
     build:
-      context: ./reverse-proxy # Ga ervan uit dat je Dockerfile.reverse-proxy en reverse_proxy.conf hier staan
+      context: ./reverse-proxy # Ga ervan uit dat je Dockerfile en reverse_proxy.conf hier staan
       dockerfile: Dockerfile.reverse-proxy # De naam van je Dockerfile voor de reverse proxy
     ports:
       - "80:80"   # Map poort 80 van de container naar poort 80 op de host
@@ -48,10 +33,9 @@ services:
     networks:
       - web-network # Plaats deze service in ons custom netwerk
     restart: always # Start automatisch opnieuw op
-    # Zorg ervoor dat de webserver en API services zijn opgestart voordat de reverse proxy start
+    # Zorg ervoor dat de webserver service is opgestart voordat de reverse proxy start (optioneel maar goed voor afhankelijkheden)
     depends_on:
       - webserver
-      - api-server
 
 # Definieer het custom netwerk
 networks:

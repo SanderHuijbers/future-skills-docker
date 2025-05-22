@@ -278,3 +278,88 @@ Om de docker compose goe te laten werken moest in docker compose eerst installer
 
 ### Opdracht 4
 
+Code aan reverse-proxy.conf toegevoegd
+
+```conf
+    # Blokkeer TRACE en OPTIONS methoden
+    if ($request_method ~* "(TRACE|OPTIONS)") {
+        return 405;
+    }
+
+    # Stel beveiligingsheaders in
+    add_header X-Frame-Options "DENY";
+    add_header Content-Security-Policy "default-src 'self'";
+```
+
+### Opdracht 5
+
+#### chown
+
+Zie Dockerfiles
+```bash
+# Maak log directories
+RUN mkdir -p /var/log/nginx && \
+    chown -R nginx:nginx /var/log/nginx
+```
+
+#### chmod
+
+zie Dockerfiles
+```bash
+# Voorbeeld in Dockerfile na COPY index.html
+RUN chmod 644 /usr/share/nginx/html/index.html
+```
+
+#### ip a
+
+```bash
+docker exec web-alpine ip a
+docker exec reverse-proxy ip a
+```
+
+#### ping 
+```bash
+docker exec web-alpine ping reverse-proxy
+```
+
+#### curl
+
+```bash
+docker exec reverse-proxy curl http://web-alpine:80
+```
+
+### Opdracht 6
+
+```bash
+curl -i http://localhost
+
+
+
+HTTP/1.1 200 OK
+Server: nginx
+Date: Fri, 02 May 2025 15:21:23 GMT
+Content-Type: text/html
+Content-Length: 381
+Connection: keep-alive
+Last-Modified: Thu, 01 May 2025 13:38:23 GMT
+ETag: "6813794f-17d"
+Accept-Ranges: bytes
+X-Frame-Options: DENY
+Content-Security-Policy: default-src 'self'
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Main page</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="">
+</head>
+
+<body>
+    <h1>Hello from Web Server via Reverse Proxy!</h1>
+</body>
+```
