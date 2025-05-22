@@ -1,13 +1,14 @@
 # docker-compose.yml
 # Definieert de webserver, reverse proxy en API services in een custom netwerk
-# Gebruikt omgevingsvariabelen uit het .env bestand
+# Gebruikt omgevingsvariabelen uit het .env bestand voor interne configuratie
 
 version: '3.8' # Gebruik een recente Docker Compose versie (optioneel, kan verwijderd worden)
 
 services:
 
   # Service voor de statische webserver
-  ${WEB_SERVER_SERVICE_NAME}:
+  # Servicenaam moet een letterlijke string zijn, geen variabele
+  webserver:
     image: my-web-server2-alpine
     container_name: ${WEB_SERVER_SERVICE_NAME} # Gebruik de variabele voor de containernaam
     build:
@@ -18,7 +19,8 @@ services:
     restart: always
 
   # Service voor de backend API applicatie
-  ${API_SERVER_SERVICE_NAME}:
+  # Servicenaam moet een letterlijke string zijn, geen variabele
+  api-server:
     image: my-api-server
     container_name: ${API_SERVER_SERVICE_NAME} # Gebruik de variabele voor de containernaam
     build:
@@ -29,7 +31,8 @@ services:
     restart: always
 
   # Service voor de Nginx reverse proxy
-  ${REVERSE_PROXY_SERVICE_NAME}:
+  # Servicenaam moet een letterlijke string zijn, geen variabele
+  reverse-proxy:
     image: my-reverse-proxy
     container_name: ${REVERSE_PROXY_SERVICE_NAME} # Gebruik de variabele voor de containernaam
     build:
@@ -42,8 +45,12 @@ services:
       - web-network
     restart: always
     depends_on:
-      - ${WEB_SERVER_SERVICE_NAME} # Gebruik de variabele voor de afhankelijkheid
-      - ${API_SERVER_SERVICE_NAME} # Gebruik de variabele voor de afhankelijkheid
+      # depends_on kan wel variabelen gebruiken, maar de service namen moeten overeenkomen
+      # met de letterlijke namen hierboven (webserver, api-server)
+      webserver:
+        condition: service_healthy # Gebruik healthcheck condition
+      api-server:
+        condition: service_healthy # Gebruik healthcheck condition
 
 # Definieer het custom netwerk
 networks:
