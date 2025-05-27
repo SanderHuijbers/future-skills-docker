@@ -3,7 +3,8 @@
 FROM alpine:3.19
 
 # Installeer Nginx en curl met gepinde versies voor stabiliteit
-RUN apk add --no-cache nginx=1.26.3-r0 curl=8.12.1-r0
+# BELANGRIJKE CORRECTIE: Nginx versie aangepast naar 1.24.0-r16 voor Alpine 3.19
+RUN apk add --no-cache nginx=1.24.0-r16 curl=8.12.1-r0
 
 # Kopieer de statische HTML pagina
 COPY index.html /usr/share/nginx/html/
