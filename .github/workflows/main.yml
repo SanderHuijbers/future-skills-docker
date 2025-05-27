@@ -1,0 +1,71 @@
+# .github/workflows/main.yml
+# GitHub Actions workflow voor het bouwen en testen van het webplatform
+
+name: Docker Compose CI
+
+# Configureer wanneer deze workflow moet worden uitgevoerd
+on:
+  push:
+    branches:
+      - main # Voer de workflow uit bij elke push naar de 'main' branch
+  pull_request:
+    branches:
+      - main # Voer de workflow uit bij elke pull request naar de 'main' branch
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest # Draai deze job op een Ubuntu Linux runner
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4 # Stap om de code van de repository te klonen
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3 # Vereist voor geavanceerde Docker builds, maar ook goed voor caching
+
+      - name: Load .env file
+        # GitHub Actions hebben geen ingebouwde support voor .env files zoals Docker Compose dat heeft.
+        # We moeten de variabelen expliciet laden of doorgeven.
+        # Voor nu gebruiken we de letterlijke servicenamen in docker-compose.yml,
+        # dus de .env variabelen voor containernamen zijn niet direct nodig voor de build.
+        # Maar als je ze in andere scripts zou gebruiken, zou je ze hier kunnen parsen.
+        run: |
+          echo "WEB_SERVER_SERVICE_NAME=webserver" >> $GITHUB_ENV
+          echo "API_SERVER_SERVICE_NAME=api-server" >> $GITHUB_ENV
+          echo "REVERSE_PROXY_SERVICE_NAME=reverse-proxy" >> $GITHUB_ENV
+          echo "REVERSE_PROXY_HTTP_PORT=80" >> $GITHUB_ENV
+          echo "REVERSE_PROXY_HTTPS_PORT=443" >> $GITHUB_ENV
+
+      - name: Build and start services
+        run: docker compose up -d --build --wait # --wait wacht tot containers healthy zijn
+        # De --wait vlag is cruciaal voor CI/CD om te wachten op healthchecks
+
+      - name: Verify Web Server access
+        run: |
+          echo "Verifying web server access..."
+          curl --fail http://localhost
+          if [ $? -eq 0 ]; then
+            echo "Web server access successful."
+          else
+            echo "Web server access failed!"
+            exit 1
+          fi
+
+      - name: Verify API access
+        run: |
+          echo "Verifying API access..."
+          curl --fail http://localhost/api
+          if [ $? -eq 0 ]; then
+            echo "API access successful."
+          else
+            echo "API access failed!"
+            exit 1
+          fi
+
+      - name: List running containers (for debugging)
+        if: always() # Voer dit altijd uit, zelfs bij falen, voor debugging
+        run: docker ps -a
+
+      - name: Stop services (cleanup)
+        if: always() # Ruim altijd op, zelfs bij falen
+        run: docker compose down
