@@ -1,9 +1,8 @@
 # .github/workflows/main.yml
-# GitHub Actions workflow voor het bouwen en testen van het webplatform
+# GitHub Actions workflow voor het bouwen, testen en linten van het webplatform
 
 name: Docker Compose CI
 
-# Configureer wanneer deze workflow moet worden uitgevoerd
 on:
   push:
     branches:
@@ -13,15 +12,46 @@ on:
       - main # Voer de workflow uit bij elke pull request naar de 'main' branch
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Lint Docker Compose YAML
+        # Installeer yamllint en lint de docker-compose.yml
+        run: |
+          sudo apt-get update && sudo apt-get install -y python3-pip
+          pip3 install yamllint
+          yamllint docker-compose.yml
+
+      - name: Lint Dockerfiles (Hadolint)
+        # Download Hadolint en lint de Dockerfiles
+        run: |
+          wget -qO- https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 > hadolint
+          chmod +x hadolint
+          ./hadolint Dockerfile.webserver
+          ./hadolint Dockerfile.api-server
+          ./hadolint Dockerfile.reverse-proxy
+
+      - name: Test Nginx Configuration Syntax
+        # Bouw een tijdelijke Nginx container om de configuratie te testen
+        # Dit is de meest betrouwbare manier om de Nginx config te valideren in CI
+        run: |
+          docker build -t temp-nginx-linter -f reverse-proxy/Dockerfile.reverse-proxy reverse-proxy/
+          docker run --rm temp-nginx-linter nginx -t -c /etc/nginx/nginx.conf # Test de hoofdconfiguratie
+```
+
   build-and-test:
-    runs-on: ubuntu-latest # Draai deze job op een Ubuntu Linux runner
+    needs: lint # Deze job wacht nu tot de 'lint' job is voltooid en succesvol is
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4 # Stap om de code van de repository te klonen
+        uses: actions/checkout@v4
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3 # Vereist voor geavanceerde Docker builds, maar ook goed voor caching
+        uses: docker/setup-buildx-action@v3
 
       - name: Load .env file
         # GitHub Actions hebben geen ingebouwde support voor .env files zoals Docker Compose dat heeft.
