@@ -1,8 +1,9 @@
 # Dockerfile voor de webserver
-FROM alpine:latest
+# Pin de Alpine versie voor consistentie
+FROM alpine:3.19
 
-# Installeer Nginx en curl (voor de healthcheck)
-RUN apk add --no-cache nginx curl
+# Installeer Nginx en curl met gepinde versies voor stabiliteit
+RUN apk add --no-cache nginx=1.26.3-r0 curl=8.12.1-r0
 
 # Kopieer de statische HTML pagina
 COPY index.html /usr/share/nginx/html/
