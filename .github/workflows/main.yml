@@ -30,9 +30,10 @@ jobs:
         run: |
           wget -qO- https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 > hadolint
           chmod +x hadolint
-          ./hadolint Dockerfile.webserver
-          ./hadolint Dockerfile.api-server
-          ./hadolint Dockerfile.reverse-proxy
+          # BELANGRIJKE CORRECTIE: Gebruik de correcte paden naar de Dockerfiles
+          ./hadolint webserver/Dockerfile.webserver
+          ./hadolint api-server/Dockerfile.api-server
+          ./hadolint reverse-proxy/Dockerfile.reverse-proxy
 
       - name: Test Nginx Configuration Syntax
         # Bouw een tijdelijke Nginx container om de configuratie te testen
@@ -41,7 +42,6 @@ jobs:
           docker build -t temp-nginx-linter -f reverse-proxy/Dockerfile.reverse-proxy reverse-proxy/
           docker run --rm temp-nginx-linter nginx -t -c /etc/nginx/nginx.conf # Test de hoofdconfiguratie
 
-  # BELANGRIJKE CORRECTIE: Deze job moet op hetzelfde indentatieniveau staan als 'lint'
   build-and-test:
     needs: lint # Deze job wacht nu tot de 'lint' job is voltooid en succesvol is
     runs-on: ubuntu-latest
