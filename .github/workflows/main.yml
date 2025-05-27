@@ -30,17 +30,29 @@ jobs:
         run: |
           wget -qO- https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 > hadolint
           chmod +x hadolint
-          # BELANGRIJKE CORRECTIE: Gebruik de correcte paden naar de Dockerfiles
+          # Gebruik de correcte paden naar de Dockerfiles
           ./hadolint webserver/Dockerfile.webserver
           ./hadolint api-server/Dockerfile.api-server
           ./hadolint reverse-proxy/Dockerfile.reverse-proxy
 
       - name: Test Nginx Configuration Syntax
-        # Bouw een tijdelijke Nginx container om de configuratie te testen
-        # Dit is de meest betrouwbare manier om de Nginx config te valideren in CI
+        # BELANGRIJKE CORRECTIE: Tijdelijk de upstream hostnamen aanpassen voor de syntax check
+        # Dit voorkomt "host not found" fouten in een geïsoleerde testomgeving.
         run: |
+          # Maak een tijdelijke, aangepaste Nginx configuratie aan
+          cp reverse-proxy/reverse_proxy.conf reverse-proxy/temp_reverse_proxy.conf
+          sed -i 's/server webserver:80;/server 127.0.0.1:80;/' reverse-proxy/temp_reverse_proxy.conf
+          sed -i 's/server api-server:5000;/server 127.0.0.1:5000;/' reverse-proxy/temp_reverse_proxy.conf
+
+          # Bouw een tijdelijke Nginx container met de aangepaste configuratie
           docker build -t temp-nginx-linter -f reverse-proxy/Dockerfile.reverse-proxy reverse-proxy/
-          docker run --rm temp-nginx-linter nginx -t -c /etc/nginx/nginx.conf # Test de hoofdconfiguratie
+
+          # Voer de Nginx syntax test uit met de tijdelijke configuratie
+          # We overschrijven de default.conf met onze temp_reverse_proxy.conf voor de test
+          docker run --rm -v $(pwd)/reverse-proxy/temp_reverse_proxy.conf:/etc/nginx/http.d/default.conf temp-nginx-linter nginx -t -c /etc/nginx/nginx.conf
+          
+          # Ruim de tijdelijke configuratie op
+          rm reverse-proxy/temp_reverse_proxy.conf
 
   build-and-test:
     needs: lint # Deze job wacht nu tot de 'lint' job is voltooid en succesvol is
