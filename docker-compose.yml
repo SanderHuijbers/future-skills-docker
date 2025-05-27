@@ -1,17 +1,18 @@
----  # YAML document start marker, required by yamllint
+---  # YAML document start marker
 # docker-compose.yml
-# Definieert webserver, reverse proxy en API services in een custom netwerk.
+# Definieert webserver, reverse proxy, en API services in een custom netwerk.
 # Gebruikt omgevingsvariabelen uit het .env bestand voor interne configuratie.
 
-version: '3.8'  # Recente Docker Compose versie (optioneel, kan verwijderd)
+version: '3.8'  # Docker Compose versie (optioneel)
 
 services:
 
-  # Service voor de statische webserver
+  # Statische webserver service
   # Servicenaam moet een letterlijke string zijn, geen variabele.
   webserver:
     image: my-web-server2-alpine
-    container_name: ${WEB_SERVER_SERVICE_NAME}  # Variabele voor containernaam
+    # Containernaam variabele
+    container_name: ${WEB_SERVER_SERVICE_NAME}
     build:
       context: ./webserver
       dockerfile: Dockerfile.webserver
@@ -19,11 +20,12 @@ services:
       - web-network
     restart: always
 
-  # Service voor de backend API applicatie
+  # Backend API applicatie service
   # Servicenaam moet een letterlijke string zijn, geen variabele.
   api-server:
     image: my-api-server
-    container_name: ${API_SERVER_SERVICE_NAME}  # Variabele voor containernaam
+    # Containernaam variabele
+    container_name: ${API_SERVER_SERVICE_NAME}
     build:
       context: ./api-server
       dockerfile: Dockerfile.api-server
@@ -31,17 +33,19 @@ services:
       - web-network
     restart: always
 
-  # Service voor de Nginx reverse proxy
+  # Nginx reverse proxy service
   # Servicenaam moet een letterlijke string zijn, geen variabele.
   reverse-proxy:
     image: my-reverse-proxy
-    container_name: ${REVERSE_PROXY_SERVICE_NAME}  # Variabele voor containernaam
+    # Containernaam variabele
+    container_name: ${REVERSE_PROXY_SERVICE_NAME}
     build:
       context: ./reverse-proxy
       dockerfile: Dockerfile.reverse-proxy
     ports:
       - "${REVERSE_PROXY_HTTP_PORT}:${REVERSE_PROXY_HTTP_PORT}"    # Poort 80
-      - "${REVERSE_PROXY_HTTPS_PORT}:${REVERSE_PROXY_HTTPS_PORT}"  # Poort 443
+      # Poort 443
+      - "${REVERSE_PROXY_HTTPS_PORT}:${REVERSE_PROXY_HTTPS_PORT}"
     networks:
       - web-network
     restart: always
