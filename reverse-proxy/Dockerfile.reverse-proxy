@@ -3,7 +3,8 @@
 FROM alpine:3.19
 
 # Installeer Nginx met gepinde versie
-RUN apk add --no-cache nginx=1.26.3-r0
+# BELANGRIJKE CORRECTIE: Nginx versie aangepast naar 1.24.0-r16 voor Alpine 3.19
+RUN apk add --no-cache nginx=1.24.0-r16
 
 # Kopieer de custom Nginx configuratie
 COPY reverse_proxy.conf /etc/nginx/http.d/default.conf

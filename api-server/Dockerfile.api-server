@@ -2,7 +2,6 @@
 FROM python:3.9.19-alpine3.19
 
 # Installeer curl met gepinde versie (nodig voor de healthcheck)
-# BELANGRIJKE CORRECTIE: Pin de versie van curl
 RUN apk add --no-cache curl=8.12.1-r0
 
 # Stel de working directory in de container in
