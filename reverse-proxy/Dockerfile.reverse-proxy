@@ -1,26 +1,18 @@
-# Dockerfile voor de Reverse Proxy
-FROM alpine:latest
+# Dockerfile voor de Nginx reverse proxy
+# Pin de Alpine versie voor consistentie
+FROM alpine:3.19
 
-# Installeer Nginx
-RUN apk add --no-cache nginx
+# Installeer Nginx met gepinde versie
+RUN apk add --no-cache nginx=1.26.3-r0
 
-# Kopieer de custom Nginx configuratie naar de juiste map
-# De standaard nginx.conf in deze Alpine image includeert bestanden uit http.d
+# Kopieer de custom Nginx configuratie
 COPY reverse_proxy.conf /etc/nginx/http.d/default.conf
 
-# === SSL/TLS Certificaten ===
-# VOEG HIER REGELS TOE OM JE EIGEN SSL/TLS CERTIFICATEN TE KOPIEREN
-# Bijvoorbeeld:
-# RUN mkdir /etc/nginx/ssl
-# COPY path/to/your/nginx.crt /etc/nginx/ssl/nginx.crt
-# COPY path/to/your/nginx.key /etc/nginx/ssl/nginx.key
-# Voor nu gebruiken we placeholder paden in de nginx.conf, maar je moet deze bestanden zelf leveren.
-
-# Maak log directories
+# Maak log directories en stel de eigenaar in (goede praktijk)
 RUN mkdir -p /var/log/nginx && \
     chown -R nginx:nginx /var/log/nginx
 
-# Expose poorten 80 en 443
+# Expose poorten 80 en 443 (informatief voor Docker)
 EXPOSE 80
 EXPOSE 443
 
