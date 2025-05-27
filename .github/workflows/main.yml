@@ -3,6 +3,9 @@
 
 name: Docker Compose CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
@@ -50,7 +53,7 @@ jobs:
           # Voer de Nginx syntax test uit met de tijdelijke configuratie
           # We overschrijven de default.conf met onze temp_reverse_proxy.conf voor de test
           docker run --rm -v $(pwd)/reverse-proxy/temp_reverse_proxy.conf:/etc/nginx/http.d/default.conf temp-nginx-linter nginx -t -c /etc/nginx/nginx.conf
-          
+
           # Ruim de tijdelijke configuratie op
           rm reverse-proxy/temp_reverse_proxy.conf
 
