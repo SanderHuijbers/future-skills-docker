@@ -1,3 +1,4 @@
+--- # YAML document start marker, required by yamllint
 # docker-compose.yml
 # Definieert de webserver, reverse proxy en API services in een custom netwerk
 # Gebruikt omgevingsvariabelen uit het .env bestand voor interne configuratie
@@ -10,7 +11,7 @@ services:
   # Servicenaam moet een letterlijke string zijn, geen variabele
   webserver:
     image: my-web-server2-alpine
-    container_name: ${WEB_SERVER_SERVICE_NAME} # Gebruik de variabele voor de containernaam
+    container_name: ${WEB_SERVER_SERVICE_NAME}  # Gebruik de variabele voor de containernaam
     build:
       context: ./webserver
       dockerfile: Dockerfile.webserver
@@ -22,7 +23,7 @@ services:
   # Servicenaam moet een letterlijke string zijn, geen variabele
   api-server:
     image: my-api-server
-    container_name: ${API_SERVER_SERVICE_NAME} # Gebruik de variabele voor de containernaam
+    container_name: ${API_SERVER_SERVICE_NAME}  # Gebruik de variabele voor de containernaam
     build:
       context: ./api-server
       dockerfile: Dockerfile.api-server
@@ -34,13 +35,13 @@ services:
   # Servicenaam moet een letterlijke string zijn, geen variabele
   reverse-proxy:
     image: my-reverse-proxy
-    container_name: ${REVERSE_PROXY_SERVICE_NAME} # Gebruik de variabele voor de containernaam
+    container_name: ${REVERSE_PROXY_SERVICE_NAME}  # Gebruik de variabele voor de containernaam
     build:
       context: ./reverse-proxy
       dockerfile: Dockerfile.reverse-proxy
     ports:
-      - "${REVERSE_PROXY_HTTP_PORT}:${REVERSE_PROXY_HTTP_PORT}"   # Map poort 80
-      - "${REVERSE_PROXY_HTTPS_PORT}:${REVERSE_PROXY_HTTPS_PORT}" # Map poort 443
+      - "${REVERSE_PROXY_HTTP_PORT}:${REVERSE_PROXY_HTTP_PORT}"    # Map poort 80
+      - "${REVERSE_PROXY_HTTPS_PORT}:${REVERSE_PROXY_HTTPS_PORT}"  # Map poort 443
     networks:
       - web-network
     restart: always
@@ -48,9 +49,9 @@ services:
       # depends_on kan wel variabelen gebruiken, maar de service namen moeten overeenkomen
       # met de letterlijke namen hierboven (webserver, api-server)
       webserver:
-        condition: service_healthy # Gebruik healthcheck condition
+        condition: service_healthy  # Gebruik healthcheck condition
       api-server:
-        condition: service_healthy # Gebruik healthcheck condition
+        condition: service_healthy  # Gebruik healthcheck condition
 
 # Definieer het custom netwerk
 networks:
