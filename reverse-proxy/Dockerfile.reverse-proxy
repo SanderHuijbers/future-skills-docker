@@ -9,6 +9,10 @@ RUN apk add --no-cache nginx=1.24.0-r16
 # Kopieer de custom Nginx configuratie
 COPY reverse_proxy.conf /etc/nginx/http.d/default.conf
 
+# Kopieer de zelfondertekende certificaten naar de Nginx configuratiemap
+# De Nginx configuratie (reverse_proxy.conf) verwijst naar deze paden
+COPY certs/ /etc/nginx/certs/
+
 # Maak log directories en stel de eigenaar in (goede praktijk)
 RUN mkdir -p /var/log/nginx && \
     chown -R nginx:nginx /var/log/nginx
