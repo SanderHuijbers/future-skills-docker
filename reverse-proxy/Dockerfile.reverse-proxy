@@ -1,25 +1,22 @@
-# Dockerfile voor de Nginx reverse proxy
-# Pin de Alpine versie voor consistentie
+# Gebruik een Alpine-versie van Nginx als basisimage
 FROM alpine:3.19
 
-# Installeer Nginx met gepinde versie
-# BELANGRIJKE CORRECTIE: Nginx versie aangepast naar 1.24.0-r16 voor Alpine 3.19
-RUN apk add --no-cache nginx=1.24.0-r16
+# Installeer Nginx en bash (voor eventuele toekomstige scripts of debugging)
+# Specifieke Nginx versie gepind voor consistentie
+RUN apk add --no-cache nginx=1.24.0-r16 bash
 
-# Kopieer de custom Nginx configuratie
-COPY reverse_proxy.conf /etc/nginx/http.d/default.conf
+# Maak de directory voor de Nginx configuratie aan als deze nog niet bestaat
+# Kopieer de Nginx configuratie van onze host naar de container
+# De naam van het bestand is belangrijk, want Nginx laadt bestanden in /etc/nginx/conf.d/ die eindigen op .conf
+COPY reverse_proxy.conf /etc/nginx/conf.d/default.conf
 
-# Kopieer de zelfondertekende certificaten naar de Nginx configuratiemap
-# De Nginx configuratie (reverse_proxy.conf) verwijst naar deze paden
+# Kopieer de zelfondertekende SSL-certificaten naar de container
 COPY certs/ /etc/nginx/certs/
 
-# Maak log directories en stel de eigenaar in (goede praktijk)
+# Maak de log directory aan en zorg dat Nginx hier schrijfrechten heeft
 RUN mkdir -p /var/log/nginx && \
     chown -R nginx:nginx /var/log/nginx
 
-# Expose poorten 80 en 443 (informatief voor Docker)
-EXPOSE 80
-EXPOSE 443
-
-# Start Nginx in de foreground
+# Zorg ervoor dat Nginx op de voorgrond draait en de configuratie correct laadt
+# Gebruik het "-g 'daemon off;'" argument om Nginx in de foreground te houden
 CMD ["nginx", "-g", "daemon off;"]
