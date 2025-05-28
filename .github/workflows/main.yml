@@ -94,10 +94,25 @@ jobs:
       - name: Build and start services
         run: docker compose up -d --build --wait
 
-      - name: Verify Web Server access
+      - name: List running containers and their health status (for debugging)
+        run: docker ps -a
+
+      - name: Get logs for all services (for debugging)
+        # Voer dit altijd uit, zelfs bij falen, voor debugging
+        if: always()
         run: |
-          echo "Verifying web server access..."
-          curl --fail http://localhost
+          echo "--- Webserver Logs ---"
+          docker logs webserver || true
+          echo "--- API Server Logs ---"
+          docker logs api-server || true
+          echo "--- Reverse Proxy Logs ---"
+          docker logs reverse-proxy || true
+
+      - name: Verify Web Server access (via HTTPS)
+        run: |
+          echo "Verifying web server access (HTTPS)..."
+          # Gebruik -k om zelfondertekende certificaten te accepteren
+          curl -k --fail https://localhost
           if [ $? -eq 0 ]; then
             echo "Web server access successful."
           else
@@ -105,10 +120,11 @@ jobs:
             exit 1
           fi
 
-      - name: Verify API access
+      - name: Verify API access (via HTTPS)
         run: |
-          echo "Verifying API access..."
-          curl --fail http://localhost/api
+          echo "Verifying API access (HTTPS)..."
+          # Gebruik -k om zelfondertekende certificaten te accepteren
+          curl -k --fail https://localhost/api
           if [ $? -eq 0 ]; then
             echo "API access successful."
           else
@@ -116,10 +132,6 @@ jobs:
             exit 1
           fi
 
-      - name: List running containers (for debugging)
-        if: always()
-        run: docker ps -a
-
       - name: Stop services (cleanup)
-        if: always()
+        if: always() # Ruim altijd op, zelfs bij falen
         run: docker compose down
