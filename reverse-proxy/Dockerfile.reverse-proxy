@@ -2,8 +2,8 @@
 FROM alpine:3.19
 
 # Installeer Nginx en bash (voor eventuele toekomstige scripts of debugging)
-# Specifieke Nginx versie gepind voor consistentie
-RUN apk add --no-cache nginx=1.24.0-r16 bash
+# Specifieke Nginx en Bash versies gepind voor consistentie
+RUN apk add --no-cache nginx=1.24.0-r16 bash=5.2.21-r0
 
 # Maak de directory voor de Nginx configuratie aan als deze nog niet bestaat
 # Kopieer de Nginx configuratie van onze host naar de container
