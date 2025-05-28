@@ -111,24 +111,32 @@ jobs:
       - name: Verify Web Server access (via HTTPS)
         run: |
           echo "Verifying web server access (HTTPS)..."
-          # Gebruik -k om zelfondertekende certificaten te accepteren
-          curl -k --fail https://localhost
-          if [ $? -eq 0 ]; then
+          # Voeg een retry-mechanisme toe voor robuustere tests
+          for i in $(seq 1 10); do
+            curl -k --fail https://localhost && s=0 && break || s=$?
+            echo "Attempt $i failed, retrying in 5 seconds..."
+            sleep 5
+          done
+          if [ $s -eq 0 ]; then
             echo "Web server access successful."
           else
-            echo "Web server access failed!"
+            echo "Web server access failed after multiple retries!"
             exit 1
           fi
 
       - name: Verify API access (via HTTPS)
         run: |
           echo "Verifying API access (HTTPS)..."
-          # Gebruik -k om zelfondertekende certificaten te accepteren
-          curl -k --fail https://localhost/api
-          if [ $? -eq 0 ]; then
+          # Voeg een retry-mechanisme toe voor robuustere tests
+          for i in $(seq 1 10); do
+            curl -k --fail https://localhost/api && s=0 && break || s=$?
+            echo "Attempt $i failed, retrying in 5 seconds..."
+            sleep 5
+          done
+          if [ $s -eq 0 ]; then
             echo "API access successful."
           else
-            echo "API access failed!"
+            echo "API access failed after multiple retries!"
             exit 1
           fi
 
