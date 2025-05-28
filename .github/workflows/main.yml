@@ -39,26 +39,41 @@ jobs:
           ./hadolint reverse-proxy/Dockerfile.reverse-proxy
 
       - name: Test Nginx Configuration Syntax
-        # BELANGRIJKE CORRECTIE: Tijdelijk de upstream hostnamen aanpassen voor de syntax check
-        # Dit voorkomt "host not found" fouten in een geïsoleerde testomgeving.
         run: |
-          # Maak een tijdelijke, aangepaste Nginx configuratie aan
-          cp reverse-proxy/reverse_proxy.conf reverse-proxy/temp_reverse_proxy.conf
-          sed -i 's/server webserver:80;/server 127.0.0.1:80;/' reverse-proxy/temp_reverse_proxy.conf
-          sed -i 's/server api-server:5000;/server 127.0.0.1:5000;/' reverse-proxy/temp_reverse_proxy.conf
+          # Maak een tijdelijke, compleet Nginx configuratiebestand voor de test
+          # Dit omvat de top-level directives (user, events) en het http-blok,
+          # zodat de Nginx syntax checker de 'proxy_cache_path' correct valideert.
+          echo "user  nginx;" > reverse-proxy/temp_nginx_test.conf
+          echo "worker_processes  auto;" >> reverse-proxy/temp_nginx_test.conf
+          echo "error_log  /var/log/nginx/error.log warn;" >> reverse-proxy/temp_nginx_test.conf
+          echo "pid        /var/run/nginx.pid;" >> reverse-proxy/temp_nginx_test.conf
+          echo "" >> reverse-proxy/temp_nginx_test.conf
+          echo "events {" >> reverse-proxy/temp_nginx_test.conf
+          echo "    worker_connections  1024;" >> reverse-proxy/temp_nginx_test.conf
+          echo "}" >> reverse-proxy/temp_nginx_test.conf
+          echo "" >> reverse-proxy/temp_nginx_test.conf
+          echo "http {" >> reverse-proxy/temp_nginx_test.conf
+          # Voeg de inhoud van je reverse_proxy.conf toe aan het http-blok
+          cat reverse-proxy/reverse_proxy.conf >> reverse-proxy/temp_nginx_test.conf
+          echo "}" >> reverse-proxy/temp_nginx_test.conf
 
-          # Bouw een tijdelijke Nginx container met de aangepaste configuratie
+          # Pas de upstream hostnamen aan voor de syntax check binnen de tijdelijke configuratie
+          # Deze Seds moeten na de 'cat' komen.
+          sed -i 's/server webserver:80;/server 127.0.0.1:80;/' reverse-proxy/temp_nginx_test.conf
+          sed -i 's/server api-server:5000;/server 127.0.0.1:5000;/' reverse-proxy/temp_nginx_test.conf
+
+          # Bouw de Nginx linter image (deze blijft hetzelfde)
           docker build -t temp-nginx-linter -f reverse-proxy/Dockerfile.reverse-proxy reverse-proxy/
 
-          # Voer de Nginx syntax test uit met de tijdelijke configuratie
-          # BELANGRIJKE CORRECTIE: Mount het tijdelijke bestand naar de juiste locatie in de container
-          docker run --rm -v $(pwd)/reverse-proxy/temp_reverse_proxy.conf:/etc/nginx/conf.d/default.conf temp-nginx-linter nginx -t -c /etc/nginx/nginx.conf
+          # Voer de Nginx syntax test uit met het complete tijdelijke configuratiebestand
+          # We mounten temp_nginx_test.conf nu direct als de hoofd nginx.conf voor de test
+          docker run --rm -v $(pwd)/reverse-proxy/temp_nginx_test.conf:/etc/nginx/nginx.conf temp-nginx-linter nginx -t -c /etc/nginx/nginx.conf
           
           # Ruim de tijdelijke configuratie op
-          rm reverse-proxy/temp_reverse_proxy.conf
+          rm reverse-proxy/temp_nginx_test.conf
 
   build-and-test:
-    needs: lint # Deze job wacht nu tot de 'lint' job is voltooid en succesvol is
+    needs: lint
     runs-on: ubuntu-latest
 
     steps:
@@ -68,12 +83,7 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Load .env file
-        # GitHub Actions hebben geen ingebouwde support voor .env files zoals Docker Compose dat heeft.
-        # We moeten de variabelen expliciet laden of doorgeven.
-        # Voor nu gebruiken we de letterlijke servicenamen in docker-compose.yml,
-        # dus de .env variabelen voor containernamen zijn niet direct nodig voor de build.
-        # Maar als je ze in andere scripts zou gebruiken, zou je ze hier kunnen parsen.
+      - name: Load .env file (for local development variables if any)
         run: |
           echo "WEB_SERVER_SERVICE_NAME=webserver" >> $GITHUB_ENV
           echo "API_SERVER_SERVICE_NAME=api-server" >> $GITHUB_ENV
@@ -82,8 +92,7 @@ jobs:
           echo "REVERSE_PROXY_HTTPS_PORT=443" >> $GITHUB_ENV
 
       - name: Build and start services
-        run: docker compose up -d --build --wait # --wait wacht tot containers healthy zijn
-        # De --wait vlag is cruciaal voor CI/CD om te wachten op healthchecks
+        run: docker compose up -d --build --wait
 
       - name: Verify Web Server access
         run: |
@@ -108,9 +117,9 @@ jobs:
           fi
 
       - name: List running containers (for debugging)
-        if: always() # Voer dit altijd uit, zelfs bij falen, voor debugging
+        if: always()
         run: docker ps -a
 
       - name: Stop services (cleanup)
-        if: always() # Ruim altijd op, zelfs bij falen
+        if: always()
         run: docker compose down
