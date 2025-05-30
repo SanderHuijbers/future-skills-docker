@@ -1,31 +1,31 @@
 ---
-#  loki/config.yaml
+#  loki/config.yaml - Compatible with Loki 2.9.14 (Single Binary with Boltdb-Shipper/Filesystem)
 
-auth_enabled: false #  Geen authenticatie vereist
+auth_enabled: false
 
 server:
-  http_listen_port: 3100 #  HTTP API voor Promtail, Grafana
-  grpc_listen_port: 9095 #  gRPC voor interne communicatie (optioneel voor single binary)
+  http_listen_port: 3100
+  grpc_listen_port: 9095
 
-target: all #  Loki draait alle componenten (ingester, querier, etc.) in één binary
+target: all
 
-schema_configs: #  Let op: dit is 'schema_configs' (meervoud) in recentere versies
+schema_configs:
   - from: 2020-10-27
-    store: boltdb-shipper #  Opslag voor indexen
-    object_store: filesystem #  Opslag voor chunks (logs)
-    schema: v12 #  Gebruik v12 schema, standaard voor 2.x
-    period: 24h #  Indexperiode, kan gelijk zijn aan retention_period
+    store: boltdb-shipper
+    object_store: filesystem
+    schema: v12 #  v12 is prima voor 2.9.x
+    period: 24h
 
-storage_config: #  De hoofdconfiguratie voor opslag
+storage_config:
   boltdb_shipper:
-    active_index_directory: /tmp/loki/index #  Waar indexen tijdelijk staan
-    cache_location: /tmp/loki/cache #  Cache voor indexen
-    retention_period: 24h #  Retentie voor indexen
+    active_index_directory: /tmp/loki/index
+    cache_location: /tmp/loki/cache
+    retention_period: 24h
   filesystem:
-    directory: /tmp/loki/chunks #  Waar de feitelijke logdata staat
+    directory: /tmp/loki/chunks
 
 chunk_store_config:
-  max_look_back_period: 24h #  Hoe ver terug je kunt zoeken
+  max_look_back_period: 24h
 
 compactor:
   compaction_interval: 10m
@@ -35,18 +35,18 @@ compactor:
 
 ingester:
   lifecycler:
-    address: 127.0.0.1 #  Adres van de ingester binnen de container
+    address: 127.0.0.1
     ring:
       kvstore:
-        store: inmemory #  Gebruik in-memory ring voor single binary
-      replication_factor: 1 #  Nodig voor ring, ook al is het single binary
+        store: inmemory
+      replication_factor: 1
     final_sleep: 0s
-  max_transfer_retries: 0 #  Nieuwe toevoeging voor meer robuustheid
+  max_transfer_retries: 0
 
 limits_config:
   enforce_metric_name: false
   reject_old_samples: true
-  reject_old_samples_max_age: 168h #  7 dagen (moet groter zijn dan retention_period)
+  reject_old_samples_max_age: 168h
   max_query_length: 5m
   max_query_series: 5000
   max_query_samples: 5000000
@@ -55,7 +55,7 @@ querier:
   default_query_lookback: 6h
   query_timeout: 1m
   max_concurrent_queries: 20
-  engine: #  De 'engine' sectie is nu wel standaard voor 2.10.0
+  engine:
     timeout: 1m
 
 ruler:
@@ -64,7 +64,7 @@ ruler:
     local:
       directory: /tmp/loki/rules
   rule_path: /tmp/loki/rules-temp
-  alertmanager_url: http://localhost #  Alleen nodig als je Alertmanager gebruikt
+  alertmanager_url: http://localhost
   ring:
     kvstore:
       store: inmemory
