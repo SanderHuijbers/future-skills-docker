@@ -63,8 +63,6 @@ services:
       api-server:
         condition: service_healthy
 
-# ... (bestaande services zoals webserver, api-server, reverse-proxy) ...
-
     loki:
       image: grafana/loki:latest
       container_name: loki
@@ -83,8 +81,8 @@ services:
       command: -config.file=/etc/promtail/config.yaml
       volumes:
         - ./promtail/config.yaml:/etc/promtail/config.yaml
-        - /var/lib/docker/containers:/var/lib/docker/containers:ro # Belangrijk: mounts Docker logs
-        - /var/run/docker.sock:/var/run/docker.sock:ro # Zodat Promtail Docker info kan krijgen
+        - /var/lib/docker/containers:/var/lib/docker/containers:ro
+        - /var/run/docker.sock:/var/run/docker.sock:ro
       networks:
         - web-network
       restart: always
@@ -97,20 +95,20 @@ services:
       ports:
         - 3000:3000
       volumes:
-        - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources # Voor datasource config
-        - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards # Voor dashboard config
-        - grafana_data:/var/lib/grafana # Voor persistente data (dashboards, users etc.)
+        - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+        - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+        - grafana_data:/var/lib/grafana
       environment:
         - GF_SECURITY_ADMIN_USER=admin
-        - GF_SECURITY_ADMIN_PASSWORD=admin # Pas dit aan voor productie!
+        - GF_SECURITY_ADMIN_PASSWORD=admin  # Pas dit aan voor productie!
       networks:
         - web-network
       restart: always
       depends_on:
         - loki
 
-volumes: # VOEG DEZE SECTIE TOE AAN HET EINDE VAN JE DOCKER-COMPOSE.YML
-  grafana_data: # Voor persistente Grafana data
+volumes:  # VOEG DEZE SECTIE TOE AAN HET EINDE VAN JE DOCKER-COMPOSE.YML
+  grafana_data:  # Voor persistente Grafana data
 
 # ... (bestaande networks sectie) ...
 
