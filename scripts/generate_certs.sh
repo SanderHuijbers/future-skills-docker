@@ -1,5 +1,5 @@
 #!/bin/bash
-CERT_DIR="../reverse-proxy/certs"
+CERT_DIR="./reverse-proxy/certs"
 # Controleer of de map 'certs' al bestaat en er bestanden in zitten
 if [ -d "$CERT_DIR" ] && [ "$(ls -A $CERT_DIR)" ]; then
     echo "Certificates already exist in $CERT_DIR. Skipping generation."
