@@ -6,8 +6,28 @@ server:
   http_listen_port: 3100
   grpc_listen_port: 9095
 
-#  'common' wordt nu 'compactor', 'ingester', 'ruler', 'querier', 'distributor', etc.
-#  Voor een simpele setup kunnen we de opslag-config direct onder 'storage' zetten.
+#  Dit is de top-level storage configuratie
+common:
+  path_prefix: /tmp/loki
+  replication_factor: 1 #  Belangrijk voor single node setup
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2020-10-27
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v11
+      #  Dit is belangrijk: de periode waarin indices worden gemaakt.
+      #  Moet overeenkomen met retention. Hier kun je '24h' zetten als je dat wilt.
+      #  Echter, voor boltdb-shipper met filesystem, is de retention_period in 'storage' leidend.
+      #  Laten we hem voor nu weghalen, want het is een veelvoorkomende bron van fouten.
+
+#  Definieer de opslag direct onder de root, of onder common (maar common is voor algemene settings)
+#  Vaak wordt storage direct onder de top-level geplaatst, naast server en common.
 storage:
   boltdb_shipper:
     active_index_directory: /tmp/loki/index
@@ -16,67 +36,32 @@ storage:
   filesystem:
     directory: /tmp/loki/chunks
 
-schema_config:
-  configs:
-    - from: 2020-10-27
-      store: boltdb-shipper
-      object_store: filesystem
-      schema: v11
-      #  'period' is vervangen door 'index_period' in de schema_config als je het per index wilt instellen.
-      #  Maar voor v11 schema met boltdb-shipper is de retention in 'storage' leidend.
-      #  Je kunt 'period' hier gewoon weglaten.
+#  Component-specifieke configuraties, nu direct onder de root
+#  De 'ring' secties voor individuele componenten zijn overbodig als ze al in 'common' staan
+#  en als de componenten in een single binary draaien.
 
-#  Het 'ruler' block is vaak nodig voor inmemory store setups
-ruler:
-  storage:
-    type: local
-    local:
-      directory: /tmp/loki/rules
-  rule_path: /tmp/loki/rules-temp
-  alertmanager_url: http://localhost #  Optioneel, voor alertmanager integratie
-  ring:
-    kvstore:
-      store: inmemory
-    instance_addr: 127.0.0.1
-  #enable_api: true #  Optioneel, voor rule API
-
-#  De 'ingester' configuratie
 ingester:
   lifecycler:
     ring:
       kvstore:
-        store: inmemory
+        store: inmemory #  Verwijzing naar common.ring
       replication_factor: 1
       instance_addr: 127.0.0.1
     final_sleep: 0s
-
 
 limits_config:
   enforce_metric_name: false
   reject_old_samples: true
   reject_old_samples_max_age: 168h #  7 dagen
 
-#  Het 'chunk_store_config' block
 chunk_store_config:
   max_look_back_period: 24h
 
-#  De 'compactor' configuratie (voor index compaction)
 compactor:
-  ring:
-    kvstore:
-      store: inmemory
-    instance_addr: 127.0.0.1
   compaction_interval: 10m
   retention_enabled: true
   retention_delete_delay: 2h
   retention_delete_worker_count: 15
-
-#  De 'distributor' configuratie
-distributor:
-  ring:
-    kvstore:
-      store: inmemory
-    instance_addr: 127.0.0.1
 
 #  De 'querier' configuratie
 querier:
@@ -84,6 +69,8 @@ querier:
   query_timeout: 1m
   max_concurrent_queries: 20
 
-#  De 'analytics' configuratie
-analytics:
-  reporting_enabled: false
+#  De 'distributor' en 'ruler' secties zijn vaak niet direct nodig in een basisconfiguratie voor een single binary
+#  als ze al de common ring gebruiken. We kunnen ze voor nu weglaten voor simpliciteit.
+
+#analytics:
+#   reporting_enabled: false
