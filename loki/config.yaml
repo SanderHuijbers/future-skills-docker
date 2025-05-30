@@ -1,61 +1,31 @@
 ---
 #  loki/config.yaml
-auth_enabled: false
+
+auth_enabled: false #  Geen authenticatie vereist
 
 server:
-  http_listen_port: 3100
-  grpc_listen_port: 9095
+  http_listen_port: 3100 #  HTTP API voor Promtail, Grafana
+  grpc_listen_port: 9095 #  gRPC voor interne communicatie (optioneel voor single binary)
 
-#  Dit is de top-level storage configuratie
-common:
-  path_prefix: /tmp/loki
-  replication_factor: 1 #  Belangrijk voor single node setup
-  ring:
-    instance_addr: 127.0.0.1
-    kvstore:
-      store: inmemory
+target: all #  Loki draait alle componenten (ingester, querier, etc.) in één binary
 
-schema_config:
-  configs:
-    - from: 2020-10-27
-      store: boltdb-shipper
-      object_store: filesystem
-      schema: v11
-      #  Dit is belangrijk: de periode waarin indices worden gemaakt.
-      #  Moet overeenkomen met retention. Hier kun je '24h' zetten als je dat wilt.
-      #  Echter, voor boltdb-shipper met filesystem, is de retention_period in 'storage' leidend.
-      #  Laten we hem voor nu weghalen, want het is een veelvoorkomende bron van fouten.
+schema_configs: #  Let op: dit is 'schema_configs' (meervoud) in recentere versies
+  - from: 2020-10-27
+    store: boltdb-shipper #  Opslag voor indexen
+    object_store: filesystem #  Opslag voor chunks (logs)
+    schema: v12 #  Gebruik v12 schema, standaard voor 2.x
+    period: 24h #  Indexperiode, kan gelijk zijn aan retention_period
 
-#  Definieer de opslag direct onder de root, of onder common (maar common is voor algemene settings)
-#  Vaak wordt storage direct onder de top-level geplaatst, naast server en common.
-storage:
+storage_config: #  De hoofdconfiguratie voor opslag
   boltdb_shipper:
-    active_index_directory: /tmp/loki/index
-    cache_location: /tmp/loki/cache
-    retention_period: 24h
+    active_index_directory: /tmp/loki/index #  Waar indexen tijdelijk staan
+    cache_location: /tmp/loki/cache #  Cache voor indexen
+    retention_period: 24h #  Retentie voor indexen
   filesystem:
-    directory: /tmp/loki/chunks
-
-#  Component-specifieke configuraties, nu direct onder de root
-#  De 'ring' secties voor individuele componenten zijn overbodig als ze al in 'common' staan
-#  en als de componenten in een single binary draaien.
-
-ingester:
-  lifecycler:
-    ring:
-      kvstore:
-        store: inmemory #  Verwijzing naar common.ring
-      replication_factor: 1
-      instance_addr: 127.0.0.1
-    final_sleep: 0s
-
-limits_config:
-  enforce_metric_name: false
-  reject_old_samples: true
-  reject_old_samples_max_age: 168h #  7 dagen
+    directory: /tmp/loki/chunks #  Waar de feitelijke logdata staat
 
 chunk_store_config:
-  max_look_back_period: 24h
+  max_look_back_period: 24h #  Hoe ver terug je kunt zoeken
 
 compactor:
   compaction_interval: 10m
@@ -63,14 +33,39 @@ compactor:
   retention_delete_delay: 2h
   retention_delete_worker_count: 15
 
-#  De 'querier' configuratie
+ingester:
+  lifecycler:
+    address: 127.0.0.1 #  Adres van de ingester binnen de container
+    ring:
+      kvstore:
+        store: inmemory #  Gebruik in-memory ring voor single binary
+      replication_factor: 1 #  Nodig voor ring, ook al is het single binary
+    final_sleep: 0s
+  max_transfer_retries: 0 #  Nieuwe toevoeging voor meer robuustheid
+
+limits_config:
+  enforce_metric_name: false
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h #  7 dagen (moet groter zijn dan retention_period)
+  max_query_length: 5m
+  max_query_series: 5000
+  max_query_samples: 5000000
+
 querier:
   default_query_lookback: 6h
   query_timeout: 1m
   max_concurrent_queries: 20
+  engine: #  De 'engine' sectie is nu wel standaard voor 2.10.0
+    timeout: 1m
 
-#  De 'distributor' en 'ruler' secties zijn vaak niet direct nodig in een basisconfiguratie voor een single binary
-#  als ze al de common ring gebruiken. We kunnen ze voor nu weglaten voor simpliciteit.
-
-#analytics:
-#   reporting_enabled: false
+ruler:
+  storage:
+    type: local
+    local:
+      directory: /tmp/loki/rules
+  rule_path: /tmp/loki/rules-temp
+  alertmanager_url: http://localhost #  Alleen nodig als je Alertmanager gebruikt
+  ring:
+    kvstore:
+      store: inmemory
+    instance_addr: 127.0.0.1
