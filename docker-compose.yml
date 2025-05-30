@@ -1,9 +1,7 @@
----  # YAML document start marker
+---
 # docker-compose.yml
 # Definieert webserver, reverse proxy, en API services in een custom netwerk.
 # Gebruikt omgevingsvariabelen uit het .env bestand voor interne configuratie.
-
-version: '3.8'  # Docker Compose versie (optioneel)
 
 services:
 
@@ -25,13 +23,21 @@ services:
   api-server:
     image: my-api-server
     # Containernaam variabele
-    container_name: ${API_SERVER_SERVICE_NAME}
+    # container_name: ${API_SERVER_SERVICE_NAME} # VERWIJDER OF COMMENT DEZE LIJN
     build:
       context: ./api-server
       dockerfile: Dockerfile.api-server
     networks:
       - web-network
     restart: always
+    deploy: # VOEG DEZE SECTIE TOE
+      replicas: 2 # Dit zal 2 instanties van de API-server starten
+      # De volgende opties zijn voor productie en optioneel voor nu, maar goed om te weten
+      # update_config:
+      #   parallelism: 1
+      #   delay: 10s
+      # restart_policy:
+      #   condition: on-failure
 
   # Nginx reverse proxy service
   # Servicenaam moet een letterlijke string zijn, geen variabele.
@@ -56,7 +62,7 @@ services:
       webserver:
         condition: service_healthy
       api-server:
-        condition: service_healthy
+        condition: service_healthy # BELANGRIJK: DEZE AFHANKELIJKHEID WERKT NU MET MEERDERE INSTANTIES
 
 # Definieer het custom netwerk
 networks:
