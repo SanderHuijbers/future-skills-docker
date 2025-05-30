@@ -23,16 +23,15 @@ services:
   api-server:
     image: my-api-server
     # Containernaam variabele
-    # container_name: ${API_SERVER_SERVICE_NAME} # VERWIJDER OF COMMENT DEZE LIJN
     build:
       context: ./api-server
       dockerfile: Dockerfile.api-server
     networks:
       - web-network
     restart: always
-    deploy: # VOEG DEZE SECTIE TOE
-      replicas: 2 # Dit zal 2 instanties van de API-server starten
-      # De volgende opties zijn voor productie en optioneel voor nu, maar goed om te weten
+    deploy:  # VOEG DEZE SECTIE TOE
+      replicas: 2  # Dit zal 2 instanties van de API-server starten
+      # De volgende opties zijn voor productie
       # update_config:
       #   parallelism: 1
       #   delay: 10s
@@ -62,7 +61,7 @@ services:
       webserver:
         condition: service_healthy
       api-server:
-        condition: service_healthy # BELANGRIJK: DEZE AFHANKELIJKHEID WERKT NU MET MEERDERE INSTANTIES
+        condition: service_healthy
 
 # Definieer het custom netwerk
 networks:
