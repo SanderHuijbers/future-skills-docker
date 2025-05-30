@@ -18,14 +18,11 @@ schema_config:
       store: boltdb-shipper
       object_store: filesystem
       schema: v12
-      period: 24h
 
 storage_config:
   boltdb_shipper:
     active_index_directory: /tmp/loki/index
     cache_location: /tmp/loki/cache
-    retention_period: 24h
-    retention_decompress_age_days: 7
   filesystem:
     directory: /tmp/loki/chunks
 
@@ -51,12 +48,9 @@ limits_config:
   max_query_samples: 5000000
 
 querier:
-  # No specific querier settings are typically needed for single binary mode beyond limits.
-  # default_query_lookback is typically managed by the frontend (Grafana) or limits_config.
-  # query_timeout, max_concurrent_queries and engine settings are usually in the `common` or `server` sections
-  # or defaults are sufficient for small deployments.
-  query_timeout: 1m # Example, ensure this isn't conflicting with anything
-  max_concurrent_queries: 20 # Example
+  query_timeout: 1m
+  # max_concurrent_queries is often implicitly handled or part of global limits in newer versions.
+  # If this still causes issues, remove it.
 
 ruler:
   storage:
@@ -64,4 +58,3 @@ ruler:
     local:
       directory: /tmp/loki/rules
   rule_path: /tmp/loki/rules-temp
-  alertmanager_url: http://localhost
