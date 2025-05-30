@@ -91,7 +91,9 @@ jobs:
           echo "REVERSE_PROXY_HTTPS_PORT=443" >> $GITHUB_ENV
 
       - name: Generate self-signed SSL certificates
-        run: script/generate_certs.sh
+        run: |
+          chmod +x scripts/generate_certs.sh
+          ./scripts/generate_certs.sh
 
       - name: Build and start services
         run: docker compose up -d --build --wait
