@@ -1,31 +1,33 @@
----
-#  loki/config.yaml - Compatible with Loki 2.9.14 (Single Binary with Boltdb-Shipper/Filesystem)
-
 auth_enabled: false
 
 server:
   http_listen_port: 3100
   grpc_listen_port: 9095
 
-target: all
+common:
+  path_prefix: /tmp/loki
+  replication_factor: 1
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: inmemory
 
-schema_configs:
-  - from: 2020-10-27
-    store: boltdb-shipper
-    object_store: filesystem
-    schema: v12 #  v12 is prima voor 2.9.x
-    period: 24h
+schema_config:
+  configs:
+    - from: 2020-10-27
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v12
+      period: 24h
 
 storage_config:
   boltdb_shipper:
     active_index_directory: /tmp/loki/index
     cache_location: /tmp/loki/cache
     retention_period: 24h
+    retention_decompress_age_days: 7
   filesystem:
     directory: /tmp/loki/chunks
-
-chunk_store_config:
-  max_look_back_period: 24h
 
 compactor:
   compaction_interval: 10m
@@ -33,15 +35,12 @@ compactor:
   retention_delete_delay: 2h
   retention_delete_worker_count: 15
 
+chunk_store_config:
+  max_look_back_period: 0s
+
 ingester:
-  lifecycler:
-    address: 127.0.0.1
-    ring:
-      kvstore:
-        store: inmemory
-      replication_factor: 1
-    final_sleep: 0s
-  max_transfer_retries: 0
+  wal:
+    dir: /tmp/loki/wal
 
 limits_config:
   enforce_metric_name: false
@@ -52,11 +51,12 @@ limits_config:
   max_query_samples: 5000000
 
 querier:
-  default_query_lookback: 6h
-  query_timeout: 1m
-  max_concurrent_queries: 20
-  engine:
-    timeout: 1m
+  # No specific querier settings are typically needed for single binary mode beyond limits.
+  # default_query_lookback is typically managed by the frontend (Grafana) or limits_config.
+  # query_timeout, max_concurrent_queries and engine settings are usually in the `common` or `server` sections
+  # or defaults are sufficient for small deployments.
+  query_timeout: 1m # Example, ensure this isn't conflicting with anything
+  max_concurrent_queries: 20 # Example
 
 ruler:
   storage:
@@ -65,7 +65,3 @@ ruler:
       directory: /tmp/loki/rules
   rule_path: /tmp/loki/rules-temp
   alertmanager_url: http://localhost
-  ring:
-    kvstore:
-      store: inmemory
-    instance_addr: 127.0.0.1
