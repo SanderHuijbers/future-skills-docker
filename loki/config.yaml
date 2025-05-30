@@ -1,0 +1,29 @@
+# loki/config.yaml
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9095
+
+common:
+  path_prefix: /tmp/loki
+  replication_factor: 1
+  storage_config:
+    boltdb_shipper:
+      active_index_directory: /tmp/loki/index
+      cache_location: /tmp/loki/cache
+      retention_period: 24h # Logs worden 24 uur bewaard
+    filesystem:
+      directory: /tmp/loki/chunks
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2020-10-27
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v11
+      period: 24h
