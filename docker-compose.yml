@@ -33,7 +33,7 @@ services:
       - web-network
     restart: always
 
-# Nginx reverse proxy service
+  # Nginx reverse proxy service
   # Servicenaam moet een letterlijke string zijn, geen variabele.
   reverse-proxy:
     image: my-reverse-proxy
@@ -46,7 +46,7 @@ services:
       - "${REVERSE_PROXY_HTTP_PORT}:${REVERSE_PROXY_HTTP_PORT}"     # Poort 80
       # Poort 443
       - "${REVERSE_PROXY_HTTPS_PORT}:${REVERSE_PROXY_HTTPS_PORT}"
-    volumes: # <-- VOEG DEZE LIJN TOE
+    volumes:
       - ./reverse-proxy/reverse_proxy.conf:/etc/nginx/nginx.conf:ro
       - ./reverse-proxy/certs:/etc/nginx/certs:ro
     networks:

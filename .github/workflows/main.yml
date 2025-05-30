@@ -48,30 +48,37 @@ jobs:
 
           cp reverse-proxy/reverse_proxy.conf ./.github/temp_nginx_config/default.conf
 
-          # Voer de Nginx syntax test direct uit.
-          # De exit code van dit commando wordt opgeslagen in $?
-          NGINX_TEST_OUTPUT=$(docker run --rm \
-            -v $(pwd)/.github/temp_nginx_config/nginx.conf:/etc/nginx/nginx.conf:ro \
-            -v $(pwd)/.github/temp_nginx_config/default.conf:/etc/nginx/conf.d/default.conf:ro \
-            nginx:alpine nginx -t -c /etc/nginx/nginx.conf 2>&1)
+          # Voer de Nginx syntax test direct uit en vang de output op.
+          # Gebruik een tijdelijk bestand voor de output om zeker te zijn van de exit code.
+          docker run --rm \
+            -v "$(pwd)/.github/temp_nginx_config/nginx.conf:/etc/nginx/nginx.conf:ro" \
+            -v "$(pwd)/.github/temp_nginx_config/default.conf:/etc/nginx/conf.d/default.conf:ro" \
+            nginx:alpine nginx -t -c /etc/nginx/nginx.conf > NGINX_OUTPUT.txt 2>&1
 
-          NGINX_EXIT_CODE=$? # Sla de exit code van de docker run commando op
+          # Sla de exit code van de laatste opdracht (docker run) op
+          NGINX_EXIT_CODE=$?
 
-          echo "$NGINX_TEST_OUTPUT" # Print altijd de volledige output voor debugging
+          # Lees de output uit het tijdelijke bestand
+          NGINX_TEST_OUTPUT=$(cat NGINX_OUTPUT.txt)
+
+          # Print de volledige output voor debugging
+          echo "--- NGINX LINTER OUTPUT ---"
+          echo "$NGINX_TEST_OUTPUT"
+          echo "--- END NGINX LINTER OUTPUT ---"
+          echo "Nginx command exited with raw code: $NGINX_EXIT_CODE"
 
           if [ $NGINX_EXIT_CODE -eq 0 ]; then
             echo "Nginx configuration test successful (exit code 0)."
           elif echo "$NGINX_TEST_OUTPUT" | grep -q "host not found"; then
             echo "Nginx configuration test passed, but with expected 'host not found' warnings. Continuing..."
-            # Forceer een succesvolle exit code voor deze stap
-            exit 0
+            exit 0 # Forceer een succesvolle exit code voor deze stap
           else
             echo "Nginx configuration test failed unexpectedly!"
-            echo "Nginx command exited with code: $NGINX_EXIT_CODE"
+            echo "Nginx command exited with final code: $NGINX_EXIT_CODE" # Dit zou de $NGINX_EXIT_CODE van de docker run moeten zijn
             exit 1 # Laat de job falen voor andere, onverwachte fouten
           fi
 
-          rm -rf ./.github/temp_nginx_config
+          rm -rf ./.github/temp_nginx_config NGINX_OUTPUT.txt
 
   build-and-test:
     needs: lint
