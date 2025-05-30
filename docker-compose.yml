@@ -1,3 +1,4 @@
+---
 # docker-compose.yml
 # Definieert webserver, reverse proxy, en API services in een custom netwerk.
 # Gebruikt omgevingsvariabelen uit het .env bestand voor interne configuratie.
@@ -28,7 +29,7 @@ services:
       - web-network
     restart: always
     deploy:
-      replicas: 2 # Dit zal 2 instanties van de API-server starten
+      replicas: 2
       # De volgende opties zijn voor productie
       # update_config:
       #   parallelism: 1
