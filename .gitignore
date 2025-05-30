@@ -1,0 +1,2 @@
+# Negeer de map met certificaten in de reverse-proxy directory
+reverse-proxy/certs/

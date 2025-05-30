@@ -33,7 +33,7 @@ services:
       - web-network
     restart: always
 
-  # Nginx reverse proxy service
+# Nginx reverse proxy service
   # Servicenaam moet een letterlijke string zijn, geen variabele.
   reverse-proxy:
     image: my-reverse-proxy
@@ -43,19 +43,20 @@ services:
       context: ./reverse-proxy
       dockerfile: Dockerfile.reverse-proxy
     ports:
-      - "${REVERSE_PROXY_HTTP_PORT}:${REVERSE_PROXY_HTTP_PORT}"    # Poort 80
+      - "${REVERSE_PROXY_HTTP_PORT}:${REVERSE_PROXY_HTTP_PORT}"     # Poort 80
       # Poort 443
       - "${REVERSE_PROXY_HTTPS_PORT}:${REVERSE_PROXY_HTTPS_PORT}"
+    volumes: # <-- VOEG DEZE LIJN TOE
+      - ./reverse-proxy/reverse_proxy.conf:/etc/nginx/nginx.conf:ro
+      - ./reverse-proxy/certs:/etc/nginx/certs:ro
     networks:
       - web-network
     restart: always
     depends_on:
-      # depends_on kan variabelen gebruiken, maar namen moeten overeenkomen
-      # met de letterlijke service namen hierboven (webserver, api-server).
       webserver:
-        condition: service_healthy  # Gebruik healthcheck condition
+        condition: service_healthy
       api-server:
-        condition: service_healthy  # Gebruik healthcheck condition
+        condition: service_healthy
 
 # Definieer het custom netwerk
 networks:
