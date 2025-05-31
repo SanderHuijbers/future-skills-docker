@@ -63,51 +63,48 @@ services:
         condition: service_healthy
 
   loki:
-    image: grafana/loki:2.9.14
+    image: grafana/loki:2.9.4
     container_name: loki
-    ports:
-      - 3100:3100
-    command: -config.file=/etc/loki/config.yaml
+    user: root:root
     volumes:
-      - ./loki/config.yaml:/etc/loki/config.yaml
-    networks:
-      - web-network
-    restart: always
+      - ./loki/config.yml:/etc/loki/local-config.yml
+      - /tmp/loki:/tmp/loki
+      - loki-data:/loki
+      - loki-wal:/wal
+    command: -config.file=/etc/loki/local-config.yml
 
   promtail:
-    image: grafana/promtail:latest
+    image: grafana/promtail:2.9.4
     container_name: promtail
-    command: -config.file=/etc/promtail/config.yaml
     volumes:
-      - ./promtail/config.yaml:/etc/promtail/config.yaml
+      - /var/log:/var/log
+      - /etc/machine-id:/etc/machine-id
+      - /etc/hostname:/etc/hostname
+      - ./promtail/config.yml:/etc/promtail/config.yml
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - web-network
-    restart: always
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/config.yml
     depends_on:
       - loki
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.2.3
     container_name: grafana
     ports:
-      - 3000:3000
-    volumes:
-      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
-      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
-      - grafana_data:/var/lib/grafana
+      - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin  # Pas dit aan voor productie!
-    networks:
-      - web-network
-    restart: always
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasource.yml
+      - grafana-data:/var/lib/grafana
     depends_on:
       - loki
 
 volumes:
   grafana_data:
+  loki-data:
+  loki-wal:
 
 # Definieer het custom netwerk
 networks:

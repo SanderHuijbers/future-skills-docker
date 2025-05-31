@@ -217,7 +217,7 @@ De 2 containers kunnen elkaar niet goed bereiken, en dat wordt wel gedaan in opd
 
 #### Maak een ./docker-compose.yml file aan
 
-```yaml
+```yml
 # docker-compose.yml
 # Definieert de webserver en reverse proxy services in een custom netwerk
 
@@ -266,7 +266,7 @@ networks:
 
 ```
 
-#### Compose het ./docker-compose.yaml
+#### Compose het ./docker-compose.yml
 
 ```bash
 docker compose up -d
