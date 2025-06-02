@@ -78,7 +78,6 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # --- NIEUWE STAPPEN VOOR DOCKER LOGIN & TAGGING ---
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -95,7 +94,6 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }} # 'latest' tag alleen op main branch
             type=sha,format=long # Tag met de lange commit SHA
             type=ref,event=branch # Tag met de branch naam
-      # --- EINDE NIEUWE STAPPEN ---
 
       - name: Load .env file (for local development variables if any)
         run: |
@@ -117,6 +115,7 @@ jobs:
 
           # Genereer de tags als een bash array, gesplitst op komma's
           # BELANGRIJKE FIX: Verwijder mogelijke nieuwe regels uit de output van docker/metadata-action
+          # ZORG DAT HIER "${{ steps.meta.outputs.tags }}" STAAT, ZODAT DEZE DYNAMISCH IS
           IFS=',' read -r -a array_of_tags <<< "$(echo "${{ steps.meta.outputs.tags }}" | tr -d '\n')"
 
           # Functie om een Docker image te bouwen en te pushen met alle relevante tags
@@ -128,10 +127,16 @@ jobs:
             local build_command="docker build --file ${dockerfile_path} ${context_path}"
 
             # Voeg elke tag afzonderlijk toe aan de build command
-            for tag in "${array_of_tags[@]}"; do
+            for full_image_ref in "${array_of_tags[@]}"; do
               # Zorg ervoor dat eventuele lege strings na splitsing worden overgeslagen
-              [[ -z "$tag" ]] && continue
-              build_command+=" --tag ${full_repo_name}:${tag}"
+              [[ -z "$full_image_ref" ]] && continue
+
+              # EXTRAHEER ALLEEN DE TAG-WAARDE (bijv. "main", "latest", "sha-...")
+              # Hiermee pakken we alles na de laatste dubbele punt (de tag zelf)
+              local tag_value="${full_image_ref##*:}"
+
+              # Gebruik de service-specifieke repositorynaam met de geëxtraheerde tag-waarde
+              build_command+=" --tag ${full_repo_name}:${tag_value}"
             done
 
             echo "Executing build command for ${service_name}: $build_command"
@@ -139,11 +144,13 @@ jobs:
             eval "$build_command"
 
             # Push alle getagde images
-            for tag in "${array_of_tags[@]}"; do
+            for full_image_ref in "${array_of_tags[@]}"; do
               # Zorg ervoor dat eventuele lege strings na splitsing worden overgeslagen
-              [[ -z "$tag" ]] && continue
-              echo "Pushing ${full_repo_name}:${tag}"
-              docker push "${full_repo_name}:${tag}"
+              [[ -z "$full_image_ref" ]] && continue
+              local tag_value="${full_image_ref##*:}" # Extraheer tag-waarde ook hier voor het pushen
+
+              echo "Pushing ${full_repo_name}:${tag_value}"
+              docker push "${full_repo_name}:${tag_value}"
             done
           }
 
