@@ -17,6 +17,10 @@ COPY . .
 # Expose de poort waarop de Flask app luistert
 EXPOSE 5000
 
+# Maak een niet-root gebruiker aan en gebruik deze
+RUN adduser -D appuser
+USER appuser
+
 # HEALTHCHECK instructie
 # BELANGRIJKE CORRECTIE: Pas het pad aan naar /api/health
 # Controleert of de Flask API op /api/health reageert met een 200 OK
