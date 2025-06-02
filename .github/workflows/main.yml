@@ -41,9 +41,11 @@ jobs:
       - name: Create dummy Nginx certificates for validation
         run: |
           mkdir -p ./.github/temp_nginx_certs
-          # Maak lege bestanden aan; Nginx controleert alleen of ze bestaan en leesbaar zijn.
-          touch ./.github/temp_nginx_certs/nginx-selfsigned.crt
-          touch ./.github/temp_nginx_certs/nginx-selfsigned.key
+
+          openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+            -keyout ./.github/temp_nginx_certs/nginx-selfsigned.key \
+            -out ./.github/temp_nginx_certs/nginx-selfsigned.crt \
+            -subj "/C=US/ST=State/L=City/O=Org/CN=localhost"
 
       - name: Validate Nginx Configuration Syntax
         run: |
