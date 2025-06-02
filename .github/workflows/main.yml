@@ -117,6 +117,7 @@ jobs:
 
           # Genereer de tags als een bash array, gesplitst op komma's
           # BELANGRIJKE FIX: Verwijder mogelijke nieuwe regels uit de output van docker/metadata-action
+          # Gebruik de variabele ${{ steps.meta.outputs.tags }} hier, NIET de letterlijke string.
           IFS=',' read -r -a array_of_tags <<< "$(echo "${{ steps.meta.outputs.tags }}" | tr -d '\n')"
 
           # Functie om een Docker image te bouwen en te pushen met alle relevante tags
@@ -144,7 +145,8 @@ jobs:
               [[ -z "$tag" ]] && continue
               echo "Pushing ${full_repo_name}:${tag}"
               docker push "${full_repo_name}:${tag}"
-            }
+            done # <-- Deze 'done' sluit de 'for' loop correct af
+          } # <-- Deze '}' sluit de functie correct af
 
           # Bouw en push de images voor elke service
           build_and_push_image "${{ env.API_SERVER_SERVICE_NAME }}" "api-server/Dockerfile.api-server" "api-server"
