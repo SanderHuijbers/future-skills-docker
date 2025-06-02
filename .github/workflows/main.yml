@@ -94,11 +94,17 @@ jobs:
       - name: Build and start services
         run: docker compose up -d --build --wait
 
+      - name: Run Backend Unit Tests (Pytest)
+        run: |
+          # Voer pytest uit binnen de api-server container.
+          # De tests/ directory wordt naar /app/tests/ gekopieerd in de Dockerfile.
+          docker compose exec api-server pytest /app/tests/
+        working-directory: ./
+
       - name: List running containers and their health status (for debugging)
         run: docker ps -a
 
       - name: Get logs for all services (for debugging)
-        # Voer dit altijd uit, zelfs bij falen, voor debugging
         if: always()
         run: |
           echo "--- Webserver Logs ---"
@@ -111,7 +117,6 @@ jobs:
       - name: Verify Web Server access (via HTTPS)
         run: |
           echo "Verifying web server access (HTTPS)..."
-          # Voeg een retry-mechanisme toe voor robuustere tests
           for i in $(seq 1 10); do
             curl -k --fail https://localhost && s=0 && break || s=$?
             echo "Attempt $i failed, retrying in 5 seconds..."
@@ -127,7 +132,6 @@ jobs:
       - name: Verify API access (via HTTPS)
         run: |
           echo "Verifying API access (HTTPS)..."
-          # Voeg een retry-mechanisme toe voor robuustere tests
           for i in $(seq 1 10); do
             curl -k --fail https://localhost/api && s=0 && break || s=$?
             echo "Attempt $i failed, retrying in 5 seconds..."
@@ -141,5 +145,5 @@ jobs:
           fi
 
       - name: Stop services (cleanup)
-        if: always() # Ruim altijd op, zelfs bij falen
+        if: always()
         run: docker compose down
