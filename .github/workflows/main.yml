@@ -38,11 +38,12 @@ jobs:
           ./hadolint api-server/Dockerfile.api-server
           ./hadolint reverse-proxy/Dockerfile.reverse-proxy
 
-      - name: Debug Nginx Configuration Syntax Test
+      - name: Validate Nginx Configuration Syntax
         run: |
           mkdir -p ./.github/temp_nginx_config
 
           # Maak een compleet Nginx configuratiebestand
+          # We voegen 'events' en 'http' blokken toe om een geldige Nginx config te creëren
           cat <<EOF > ./.github/temp_nginx_config/nginx.conf
           events {
               worker_connections 1024;
@@ -53,24 +54,15 @@ jobs:
           }
           EOF
 
-          echo "--- STARTING NGINX SYNTAX TEST ---"
-          # Voer de Nginx syntax test uit en laat alle output direct naar de console gaan.
-          # Verwijder de "set -e" (default in actions run) tijdelijk voor deze line
-          # om te zien wat de *echte* fout is.
+          echo "--- STARTING NGINX SYNTAX VALIDATION ---"
+          # Voer de Nginx syntax test uit. Als deze faalt, zal de stap falen.
           docker run --rm \
             -v "$(pwd)/.github/temp_nginx_config/nginx.conf:/etc/nginx/nginx.conf:ro" \
-            nginx:alpine nginx -t -c /etc/nginx/nginx.conf || true
-          echo "--- END NGINX SYNTAX TEST ---"
+            nginx:alpine nginx -t -c /etc/nginx/nginx.conf
+          echo "--- END NGINX SYNTAX VALIDATION ---"
 
-          # We wissen de temp directory ZELFS als de test faalt
+          # Ruim de tijdelijke directory op
           rm -rf ./.github/temp_nginx_config
-
-          # De volgende lijn zal de stap dwingen te falen, ALS de docker run hierboven faalt.
-          # Anders zal deze stap slagen.
-          # We doen dit zodat we de output ZIEN, ongeacht de exit code van docker run.
-          echo "Debug step completed. Check logs above for Nginx test output."
-          exit 0 # We forceren deze stap om succesvol te zijn, zodat we de logs kunnen zien.
-
   build-and-test:
     needs: lint
     runs-on: ubuntu-latest
