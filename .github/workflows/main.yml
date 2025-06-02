@@ -110,55 +110,44 @@ jobs:
           chmod +x scripts/generate_certs.sh
           ./scripts/generate_certs.sh
 
-      # AANPASSING: Docker Compose build moet nu gebruikmaken van de tags
       - name: Build and push services to GHCR
         run: |
-          # De services moeten nu expliciet worden gebouwd en getagd met de berekende GHCR tags
-          # Voorbeeld voor webserver: docker compose build webserver
-          # Daarna docker push ghcr.io/jouw-gebruikersnaam/jouw-repository-webserver:tag
-          # Dit is complexer met docker compose direct, makkelijker is de images individueel te bouwen en pushen
-          # Wees voorzichtig met de `docker compose up --build` als je dit combineert met `docker push`
-          # Beter is: Eerst build, dan run, dan push.
+          # Basis Image naam (bijv. ghcr.io/sanderhuijbers/future-skills-docker)
+          BASE_IMAGE_NAME="ghcr.io/${{ github.repository }}"
+          # Genereer de tags als een bash array, gesplitst op komma's
+          # De output van ${{ steps.meta.outputs.tags }} is een komma-gescheiden string.
+          IFS=',' read -r -a array_of_tags <<< "${{ steps.meta.outputs.tags }}"
 
-          # Eerste bouwen zonder direct op te starten (of met --no-start)
-          # We gebruiken hier de DOCKER_BUILDKIT=1 voor betere build support
+          # Functie om een Docker image te bouwen en te pushen met alle relevante tags
+          build_and_push_image() {
+            local service_name=$1
+            local dockerfile_path=$2
+            local context_path=$3
+            local full_repo_name="${BASE_IMAGE_NAME}-${service_name}" # Bijv. ghcr.io/user/repo-api-server
+            local build_command="docker build --file ${dockerfile_path} ${context_path}"
 
-          # Bouw de api-server image en tag deze
-          docker build \
-            --tag ${{ steps.meta.outputs.tags }}-${{ env.API_SERVER_SERVICE_NAME }} \
-            --file api-server/Dockerfile.api-server \
-            api-server
+            # Voeg elke tag afzonderlijk toe aan de build command
+            for tag in "${array_of_tags[@]}"; do
+              build_command+=" --tag ${full_repo_name}:${tag}"
+            done
 
-          # Bouw de webserver image en tag deze
-          docker build \
-            --tag ${{ steps.meta.outputs.tags }}-${{ env.WEB_SERVER_SERVICE_NAME }} \
-            --file webserver/Dockerfile.webserver \
-            webserver
+            echo "Executing build command for ${service_name}: $build_command"
+            # Gebruik eval om de dynamisch geconstrueerde string uit te voeren
+            # Dit is nodig omdat de tags als afzonderlijke argumenten moeten worden doorgegeven.
+            eval "$build_command"
 
-          # Bouw de reverse-proxy image en tag deze
-          docker build \
-            --tag ${{ steps.meta.outputs.tags }}-${{ env.REVERSE_PROXY_SERVICE_NAME }} \
-            --file reverse-proxy/Dockerfile.reverse-proxy \
-            reverse-proxy
+            # Push alle getagde images
+            for tag in "${array_of_tags[@]}"; do
+              echo "Pushing ${full_repo_name}:${tag}"
+              docker push "${full_repo_name}:${tag}"
+            done
+          }
 
-          # Nu push je de getagde images naar GHCR
-          docker push ${{ steps.meta.outputs.tags }}-${{ env.API_SERVER_SERVICE_NAME }}
-          docker push ${{ steps.meta.outputs.tags }}-${{ env.WEB_SERVER_SERVICE_NAME }}
-          docker push ${{ steps.meta.outputs.tags }}-${{ env.REVERSE_PROXY_SERVICE_NAME }}
+          # Bouw en push de images voor elke service
+          build_and_push_image "${{ env.API_SERVER_SERVICE_NAME }}" "api-server/Dockerfile.api-server" "api-server"
+          build_and_push_image "${{ env.WEB_SERVER_SERVICE_NAME }}" "webserver/Dockerfile.webserver" "webserver"
+          build_and_push_image "${{ env.REVERSE_PROXY_SERVICE_NAME }}" "reverse-proxy/Dockerfile.reverse-proxy" "reverse-proxy"
 
-          # Start dan de services met de *nieuw getagde* images
-          # Pas je docker-compose.yml aan om deze getagde images te gebruiken
-          # Hiervoor moeten de 'image' velden in docker-compose.yml dynamisch worden,
-          # of je moet de services bouwen en dan pas lokaal taggen en runnen.
-          # De meest gangbare manier is dat je docker-compose.yml zelf de "image" velden bijwerkt
-          # naar de gepushte images, of je werkt met environment variabelen.
-
-          # Voor nu houden we de services up-en-running zoals ze lokaal gebouwd worden
-          # en pushen we de images los. De `docker compose up -d --build --wait` is hier niet meer nodig in de
-          # huidige vorm, tenzij je de `image` velden in docker-compose.yml aanpast.
-          # Laten we voor deze stap de `docker compose up -d --build --wait` vervangen door:
-          # docker compose up -d --wait
-          # Zodat het de *lokaal gebouwde* images gebruikt (of later de gepushte als docker-compose.yml is aangepast)
-          docker compose up -d --wait # Start de services na de build en push
-
-      # ... (rest van de build-and-test job, inclusief Run Backend Unit Tests, List running containers, Get logs, Verify access, Stop services) ...
+          # Start dan de services met de lokaal gebouwde images
+          # De images zijn nu gepusht naar GHCR. Voor de CI/CD tests gebruiken we de lokaal gebouwde varianten.
+          docker compose up -d --wait
