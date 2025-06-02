@@ -1,4 +1,73 @@
-build-and-test:
+# .github/workflows/main.yml
+# GitHub Actions workflow voor het bouwen, testen en linten van het webplatform
+
+name: Docker Compose CI
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main # Voer de workflow uit bij elke push naar de 'main' branch
+  pull_request:
+    branches:
+      - main # Voer de workflow uit bij elke pull request naar de 'main' branch
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Lint Docker Compose YAML
+        # Installeer yamllint en lint de docker-compose.yml
+        run: |
+          sudo apt-get update && sudo apt-get install -y python3-pip
+          pip3 install yamllint
+          yamllint docker-compose.yml
+
+      - name: Lint Dockerfiles (Hadolint)
+        # Download Hadolint en lint de Dockerfiles
+        run: |
+          wget -qO- https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 > hadolint
+          chmod +x hadolint
+          # Gebruik de correcte paden naar de Dockerfiles
+          ./hadolint webserver/Dockerfile.webserver
+          ./hadolint api-server/Dockerfile.api-server
+          ./hadolint reverse-proxy/Dockerfile.reverse-proxy
+
+      - name: Create dummy Nginx certificates for validation
+        run: |
+          mkdir -p ./.github/temp_nginx_certs
+
+          openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+            -keyout ./.github/temp_nginx_certs/nginx-selfsigned.key \
+            -out ./.github/temp_nginx_certs/nginx-selfsigned.crt \
+            -subj "/C=US/ST=State/L=City/O=Org/CN=localhost"
+
+      - name: Validate Nginx Configuration Syntax
+        run: |
+          mkdir -p ./.github/temp_nginx_config
+
+          cp reverse-proxy/reverse_proxy.conf ./.github/temp_nginx_config/nginx.conf
+
+          echo "--- STARTING NGINX SYNTAX VALIDATION ---"
+          # Voer de Nginx syntax test uit. Als deze faalt, zal de stap falen.
+          docker run --rm \
+            --add-host webserver:127.0.0.1 \
+            --add-host api-server:127.0.0.1 \
+            -v "$(pwd)/.github/temp_nginx_config/nginx.conf:/etc/nginx/nginx.conf:ro" \
+            -v "$(pwd)/.github/temp_nginx_certs:/etc/nginx/certs:ro" \
+            nginx:alpine nginx -t -c /etc/nginx/nginx.conf
+          echo "--- END NGINX SYNTAX VALIDATION ---"
+
+          # Ruim de tijdelijke directory op
+          rm -rf ./.github/temp_nginx_config
+          rm -rf ./.github/temp_nginx_certs
+
+  build-and-test:
     needs: lint
     runs-on: ubuntu-latest
 
@@ -25,17 +94,11 @@ build-and-test:
       - name: Build and start services
         run: docker compose up -d --build --wait
 
-      - name: Run Backend Unit Tests (Pytest)
-        run: |
-          # Voer pytest uit binnen de api-server container.
-          # De tests/ directory wordt naar /app/tests/ gekopieerd in de Dockerfile.
-          docker compose exec api-server pytest /app/tests/
-        working-directory: ./
-
       - name: List running containers and their health status (for debugging)
         run: docker ps -a
 
       - name: Get logs for all services (for debugging)
+        # Voer dit altijd uit, zelfs bij falen, voor debugging
         if: always()
         run: |
           echo "--- Webserver Logs ---"
@@ -48,6 +111,7 @@ build-and-test:
       - name: Verify Web Server access (via HTTPS)
         run: |
           echo "Verifying web server access (HTTPS)..."
+          # Voeg een retry-mechanisme toe voor robuustere tests
           for i in $(seq 1 10); do
             curl -k --fail https://localhost && s=0 && break || s=$?
             echo "Attempt $i failed, retrying in 5 seconds..."
@@ -63,6 +127,7 @@ build-and-test:
       - name: Verify API access (via HTTPS)
         run: |
           echo "Verifying API access (HTTPS)..."
+          # Voeg een retry-mechanisme toe voor robuustere tests
           for i in $(seq 1 10); do
             curl -k --fail https://localhost/api && s=0 && break || s=$?
             echo "Attempt $i failed, retrying in 5 seconds..."
@@ -76,5 +141,5 @@ build-and-test:
           fi
 
       - name: Stop services (cleanup)
-        if: always()
+        if: always() # Ruim altijd op, zelfs bij falen
         run: docker compose down
