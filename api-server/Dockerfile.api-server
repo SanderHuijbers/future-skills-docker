@@ -11,15 +11,20 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Kopieer de rest van de applicatiebestanden
+# Kopieer de rest van de applicatiebestanden (inclusief app.py en tests/)
 COPY . .
+
+# Maak een niet-root gebruiker aan
+RUN adduser -D appuser
+# Geef de appuser eigenaarschap van de /app directory en zijn inhoud
+# Dit zorgt ervoor dat appuser schrijfrechten heeft, bijv. voor .pytest_cache
+RUN chown -R appuser:appuser /app
+
+# Gebruik de niet-root gebruiker voor alle volgende instructies en runtime
+USER appuser
 
 # Expose de poort waarop de Flask app luistert
 EXPOSE 5000
-
-# Maak een niet-root gebruiker aan en gebruik deze
-RUN adduser -D appuser
-USER appuser
 
 # HEALTHCHECK instructie
 # BELANGRIJKE CORRECTIE: Pas het pad aan naar /api/health
