@@ -114,9 +114,10 @@ jobs:
         run: |
           # Basis Image naam (bijv. ghcr.io/sanderhuijbers/future-skills-docker)
           BASE_IMAGE_NAME="ghcr.io/${{ github.repository }}"
+
           # Genereer de tags als een bash array, gesplitst op komma's
-          # De output van ${{ steps.meta.outputs.tags }} is een komma-gescheiden string.
-          IFS=',' read -r -a array_of_tags <<< "${{ steps.meta.outputs.tags }}"
+          # BELANGRIJKE FIX: Verwijder mogelijke nieuwe regels uit de output van docker/metadata-action
+          IFS=',' read -r -a array_of_tags <<< "$(echo "${{ steps.meta.outputs.tags }}" | tr -d '\n')"
 
           # Functie om een Docker image te bouwen en te pushen met alle relevante tags
           build_and_push_image() {
@@ -128,20 +129,22 @@ jobs:
 
             # Voeg elke tag afzonderlijk toe aan de build command
             for tag in "${array_of_tags[@]}"; do
+              # Zorg ervoor dat eventuele lege strings na splitsing worden overgeslagen
+              [[ -z "$tag" ]] && continue
               build_command+=" --tag ${full_repo_name}:${tag}"
             done
 
             echo "Executing build command for ${service_name}: $build_command"
             # Gebruik eval om de dynamisch geconstrueerde string uit te voeren
-            # Dit is nodig omdat de tags als afzonderlijke argumenten moeten worden doorgegeven.
             eval "$build_command"
 
             # Push alle getagde images
             for tag in "${array_of_tags[@]}"; do
+              # Zorg ervoor dat eventuele lege strings na splitsing worden overgeslagen
+              [[ -z "$tag" ]] && continue
               echo "Pushing ${full_repo_name}:${tag}"
               docker push "${full_repo_name}:${tag}"
-            done
-          }
+            }
 
           # Bouw en push de images voor elke service
           build_and_push_image "${{ env.API_SERVER_SERVICE_NAME }}" "api-server/Dockerfile.api-server" "api-server"
@@ -149,5 +152,4 @@ jobs:
           build_and_push_image "${{ env.REVERSE_PROXY_SERVICE_NAME }}" "reverse-proxy/Dockerfile.reverse-proxy" "reverse-proxy"
 
           # Start dan de services met de lokaal gebouwde images
-          # De images zijn nu gepusht naar GHCR. Voor de CI/CD tests gebruiken we de lokaal gebouwde varianten.
           docker compose up -d --wait
