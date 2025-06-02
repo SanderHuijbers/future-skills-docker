@@ -42,17 +42,9 @@ jobs:
         run: |
           mkdir -p ./.github/temp_nginx_config
 
-          # Maak een compleet Nginx configuratiebestand
-          # We voegen 'events' en 'http' blokken toe om een geldige Nginx config te creëren
-          cat <<EOF > ./.github/temp_nginx_config/nginx.conf
-          events {
-              worker_connections 1024;
-          }
-
-          http {
-              $(cat reverse-proxy/reverse_proxy.conf)
-          }
-          EOF
+          # Kopieer reverse_proxy.conf direct naar de tijdelijke Nginx configuratie,
+          # aangezien deze al de events {} en http {} blokken bevat.
+          cp reverse-proxy/reverse_proxy.conf ./.github/temp_nginx_config/nginx.conf
 
           echo "--- STARTING NGINX SYNTAX VALIDATION ---"
           # Voer de Nginx syntax test uit. Als deze faalt, zal de stap falen.
@@ -63,6 +55,7 @@ jobs:
 
           # Ruim de tijdelijke directory op
           rm -rf ./.github/temp_nginx_config
+
   build-and-test:
     needs: lint
     runs-on: ubuntu-latest
