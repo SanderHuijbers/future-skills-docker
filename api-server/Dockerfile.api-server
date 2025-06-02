@@ -15,10 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Maak een niet-root gebruiker aan
-RUN adduser -D appuser
-# Geef de appuser eigenaarschap van de /app directory en zijn inhoud
-# Dit zorgt ervoor dat appuser schrijfrechten heeft, bijv. voor .pytest_cache
-RUN chown -R appuser:appuser /app
+RUN adduser -D appuser \
+    chown -R appuser:appuser /app
 
 # Gebruik de niet-root gebruiker voor alle volgende instructies en runtime
 USER appuser
