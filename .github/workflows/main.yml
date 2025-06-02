@@ -96,10 +96,10 @@ jobs:
 
       - name: Run Backend Unit Tests (Pytest)
         run: |
-          # Voer pytest uit binnen de api-server container.
-          # De tests/ directory wordt naar /app/tests/ gekopieerd in de Dockerfile.
-          docker compose exec api-server pytest /app/tests/
-        working-directory: ./
+          # Voer pytest uit binnen de api-server container, zorgend dat de app module vindbaar is.
+          # Export PYTHONPATH om de root van de app (/app) aan het Python zoekpad toe te voegen.
+          docker compose exec api-server bash -c "export PYTHONPATH=/app:$PYTHONPATH && pytest /app/tests/"
+        working-directory: ./ # Belangrijk: Zorg dat de opdracht vanuit de root van de repo wordt uitgevoerd
 
       - name: List running containers and their health status (for debugging)
         run: docker ps -a
