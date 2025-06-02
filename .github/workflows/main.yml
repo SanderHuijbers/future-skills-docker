@@ -98,7 +98,8 @@ jobs:
         run: |
           # Voer pytest uit binnen de api-server container, zorgend dat de app module vindbaar is.
           # Export PYTHONPATH om de root van de app (/app) aan het Python zoekpad toe te voegen.
-          docker compose exec api-server bash -c "export PYTHONPATH=/app:$PYTHONPATH && pytest /app/tests/"
+          # Gebruik 'sh -c' omdat Alpine-gebaseerde images geen 'bash' hebben geïnstalleerd.
+          docker compose exec api-server sh -c "export PYTHONPATH=/app:$PYTHONPATH && pytest /app/tests/"
         working-directory: ./ # Belangrijk: Zorg dat de opdracht vanuit de root van de repo wordt uitgevoerd
 
       - name: List running containers and their health status (for debugging)
