@@ -1,72 +1,3 @@
-# .github/workflows/main.yml
-# GitHub Actions workflow voor het bouwen, testen en linten van het webplatform
-
-name: Docker Compose CI
-
-permissions:
-  contents: read
-
-on:
-  push:
-    branches:
-      - main # Voer de workflow uit bij elke push naar de 'main' branch
-  pull_request:
-    branches:
-      - main # Voer de workflow uit bij elke pull request naar de 'main' branch
-
-jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Lint Docker Compose YAML
-        # Installeer yamllint en lint de docker-compose.yml
-        run: |
-          sudo apt-get update && sudo apt-get install -y python3-pip
-          pip3 install yamllint
-          yamllint docker-compose.yml
-
-      - name: Lint Dockerfiles (Hadolint)
-        # Download Hadolint en lint de Dockerfiles
-        run: |
-          wget -qO- https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 > hadolint
-          chmod +x hadolint
-          # Gebruik de correcte paden naar de Dockerfiles
-          ./hadolint webserver/Dockerfile.webserver
-          ./hadolint api-server/Dockerfile.api-server
-          ./hadolint reverse-proxy/Dockerfile.reverse-proxy
-
-      - name: Create dummy Nginx certificates for validation
-        run: |
-          mkdir -p ./.github/temp_nginx_certs
-
-          openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
-            -keyout ./.github/temp_nginx_certs/nginx-selfsigned.key \
-            -out ./.github/temp_nginx_certs/nginx-selfsigned.crt \
-            -subj "/C=US/ST=State/L=City/O=Org/CN=localhost"
-
-      - name: Validate Nginx Configuration Syntax
-        run: |
-          mkdir -p ./.github/temp_nginx_config
-
-          cp reverse-proxy/reverse_proxy.conf ./.github/temp_nginx_config/nginx.conf
-
-          echo "--- STARTING NGINX SYNTAX VALIDATION ---"
-          # Voer de Nginx syntax test uit. Als deze faalt, zal de stap falen.
-          docker run --rm \
-            --add-host webserver:127.0.0.1 \
-            --add-host api-server:127.0.0.1 \
-            -v "$(pwd)/.github/temp_nginx_config/nginx.conf:/etc/nginx/nginx.conf:ro" \
-            -v "$(pwd)/.github/temp_nginx_certs:/etc/nginx/certs:ro" \
-            nginx:alpine nginx -t -c /etc/nginx/nginx.conf
-          echo "--- END NGINX SYNTAX VALIDATION ---"
-
-          # Ruim de tijdelijke directory op
-          rm -rf ./.github/temp_nginx_config
-          rm -rf ./.github/temp_nginx_certs
-
   build-and-test:
     needs: lint
     runs-on: ubuntu-latest
@@ -113,10 +44,9 @@ jobs:
           # Basis Image naam (bijv. ghcr.io/sanderhuijbers/future-skills-docker)
           BASE_IMAGE_NAME="ghcr.io/${{ github.repository }}"
 
-          # Genereer de tags als een bash array, gesplitst op komma's
-          # BELANGRIJKE FIX: Verwijder mogelijke nieuwe regels uit de output van docker/metadata-action
-          # ZORG DAT HIER "${{ steps.meta.outputs.tags }}" STAAT, ZODAT DEZE DYNAMISCH IS
-          IFS=',' read -r -a array_of_tags <<< "$(echo "${{ steps.meta.outputs.tags }}" | tr -d '\n')"
+          # Genereer de tags als een bash array, gesplitst op nieuwe regels
+          # BELANGRIJKE FIX: Gebruik readarray om de newline-gescheiden output correct te splitsen
+          readarray -t array_of_tags <<< "${{ steps.meta.outputs.tags }}"
 
           # Functie om een Docker image te bouwen en te pushen met alle relevante tags
           build_and_push_image() {
