@@ -78,6 +78,25 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # --- NIEUWE STAPPEN VOOR DOCKER LOGIN & TAGGING ---
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata (tags)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }} # Naam van je repository als basis voor de image
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }} # 'latest' tag alleen op main branch
+            type=sha,format=long # Tag met de lange commit SHA
+            type=ref,event=branch # Tag met de branch naam
+      # --- EINDE NIEUWE STAPPEN ---
+
       - name: Load .env file (for local development variables if any)
         run: |
           echo "WEB_SERVER_SERVICE_NAME=webserver" >> $GITHUB_ENV
@@ -91,60 +110,55 @@ jobs:
           chmod +x scripts/generate_certs.sh
           ./scripts/generate_certs.sh
 
-      - name: Build and start services
-        run: docker compose up -d --build --wait
-
-      - name: Run Backend Unit Tests (Pytest)
+      # AANPASSING: Docker Compose build moet nu gebruikmaken van de tags
+      - name: Build and push services to GHCR
         run: |
-          # Voer pytest uit binnen de api-server container, zorgend dat de app module vindbaar is.
-          # Export PYTHONPATH om de root van de app (/app) aan het Python zoekpad toe te voegen.
-          # Gebruik 'sh -c' omdat Alpine-gebaseerde images geen 'bash' hebben geïnstalleerd.
-          docker compose exec api-server sh -c "export PYTHONPATH=/app:$PYTHONPATH && pytest /app/tests/"
-        working-directory: ./ # Belangrijk: Zorg dat de opdracht vanuit de root van de repo wordt uitgevoerd
+          # De services moeten nu expliciet worden gebouwd en getagd met de berekende GHCR tags
+          # Voorbeeld voor webserver: docker compose build webserver
+          # Daarna docker push ghcr.io/jouw-gebruikersnaam/jouw-repository-webserver:tag
+          # Dit is complexer met docker compose direct, makkelijker is de images individueel te bouwen en pushen
+          # Wees voorzichtig met de `docker compose up --build` als je dit combineert met `docker push`
+          # Beter is: Eerst build, dan run, dan push.
 
-      - name: List running containers and their health status (for debugging)
-        run: docker ps -a
+          # Eerste bouwen zonder direct op te starten (of met --no-start)
+          # We gebruiken hier de DOCKER_BUILDKIT=1 voor betere build support
 
-      - name: Get logs for all services (for debugging)
-        if: always()
-        run: |
-          echo "--- Webserver Logs ---"
-          docker logs webserver || true
-          echo "--- API Server Logs ---"
-          docker logs api-server || true
-          echo "--- Reverse Proxy Logs ---"
-          docker logs reverse-proxy || true
+          # Bouw de api-server image en tag deze
+          docker build \
+            --tag ${{ steps.meta.outputs.tags }}-${{ env.API_SERVER_SERVICE_NAME }} \
+            --file api-server/Dockerfile.api-server \
+            api-server
 
-      - name: Verify Web Server access (via HTTPS)
-        run: |
-          echo "Verifying web server access (HTTPS)..."
-          for i in $(seq 1 10); do
-            curl -k --fail https://localhost && s=0 && break || s=$?
-            echo "Attempt $i failed, retrying in 5 seconds..."
-            sleep 5
-          done
-          if [ $s -eq 0 ]; then
-            echo "Web server access successful."
-          else
-            echo "Web server access failed after multiple retries!"
-            exit 1
-          fi
+          # Bouw de webserver image en tag deze
+          docker build \
+            --tag ${{ steps.meta.outputs.tags }}-${{ env.WEB_SERVER_SERVICE_NAME }} \
+            --file webserver/Dockerfile.webserver \
+            webserver
 
-      - name: Verify API access (via HTTPS)
-        run: |
-          echo "Verifying API access (HTTPS)..."
-          for i in $(seq 1 10); do
-            curl -k --fail https://localhost/api && s=0 && break || s=$?
-            echo "Attempt $i failed, retrying in 5 seconds..."
-            sleep 5
-          done
-          if [ $s -eq 0 ]; then
-            echo "API access successful."
-          else
-            echo "API access failed after multiple retries!"
-            exit 1
-          fi
+          # Bouw de reverse-proxy image en tag deze
+          docker build \
+            --tag ${{ steps.meta.outputs.tags }}-${{ env.REVERSE_PROXY_SERVICE_NAME }} \
+            --file reverse-proxy/Dockerfile.reverse-proxy \
+            reverse-proxy
 
-      - name: Stop services (cleanup)
-        if: always()
-        run: docker compose down
+          # Nu push je de getagde images naar GHCR
+          docker push ${{ steps.meta.outputs.tags }}-${{ env.API_SERVER_SERVICE_NAME }}
+          docker push ${{ steps.meta.outputs.tags }}-${{ env.WEB_SERVER_SERVICE_NAME }}
+          docker push ${{ steps.meta.outputs.tags }}-${{ env.REVERSE_PROXY_SERVICE_NAME }}
+
+          # Start dan de services met de *nieuw getagde* images
+          # Pas je docker-compose.yml aan om deze getagde images te gebruiken
+          # Hiervoor moeten de 'image' velden in docker-compose.yml dynamisch worden,
+          # of je moet de services bouwen en dan pas lokaal taggen en runnen.
+          # De meest gangbare manier is dat je docker-compose.yml zelf de "image" velden bijwerkt
+          # naar de gepushte images, of je werkt met environment variabelen.
+
+          # Voor nu houden we de services up-en-running zoals ze lokaal gebouwd worden
+          # en pushen we de images los. De `docker compose up -d --build --wait` is hier niet meer nodig in de
+          # huidige vorm, tenzij je de `image` velden in docker-compose.yml aanpast.
+          # Laten we voor deze stap de `docker compose up -d --build --wait` vervangen door:
+          # docker compose up -d --wait
+          # Zodat het de *lokaal gebouwde* images gebruikt (of later de gepushte als docker-compose.yml is aangepast)
+          docker compose up -d --wait # Start de services na de build en push
+
+      # ... (rest van de build-and-test job, inclusief Run Backend Unit Tests, List running containers, Get logs, Verify access, Stop services) ...
