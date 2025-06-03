@@ -1,13 +1,10 @@
 # Gebruik een Alpine-versie van Nginx als basisimage
 FROM alpine:3.19
 
-# Installeer Nginx en bash (voor eventuele toekomstige scripts of debugging)
-# Specifieke Nginx en Bash versies gepind voor consistentie
+# Installeer Nginx en bash
 RUN apk add --no-cache nginx=1.24.0-r16 bash=5.2.21-r0
 
-# Maak de directory voor de Nginx configuratie aan als deze nog niet bestaat
 # Kopieer de Nginx configuratie van onze host naar de container
-# De naam van het bestand is belangrijk, want Nginx laadt bestanden in /etc/nginx/conf.d/ die eindigen op .conf
 COPY reverse_proxy.conf /etc/nginx/conf.d/default.conf
 
 # Kopieer de zelfondertekende SSL-certificaten naar de container

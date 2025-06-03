@@ -3,23 +3,26 @@
 FROM alpine:3.19
 
 # Installeer Nginx en curl met gepinde versies voor stabiliteit
-# BELANGRIJKE CORRECTIE: Nginx versie aangepast naar 1.24.0-r16 voor Alpine 3.19
 RUN apk add --no-cache nginx=1.24.0-r16 curl=8.12.1-r0
 
 # Kopieer de statische HTML pagina
 COPY index.html /usr/share/nginx/html/
 
-# Stel expliciet de permissies in voor de HTML-pagina
-RUN chmod 644 /usr/share/nginx/html/index.html
+# Kopieer de images map naar de Nginx HTML directory
+COPY images/ /usr/share/nginx/html/images/
+
+# Permissies voor de HTML-pagina en de images map
+RUN chmod 644 /usr/share/nginx/html/index.html && \
+    chmod -R 644 /usr/share/nginx/html/images/
 
 # Kopieer de custom Nginx configuratie
 COPY webserver.conf /etc/nginx/http.d/default.conf
 
-# Maak log directories en stel de eigenaar in (goede praktijk)
+# Maak log directories en stel de eigenaar in
 RUN mkdir -p /var/log/nginx && \
     chown -R nginx:nginx /var/log/nginx
 
-# Expose poort 80 (informatief voor Docker, niet functioneel voor host mapping)
+# Expose poort 80
 EXPOSE 80
 
 # HEALTHCHECK instructie

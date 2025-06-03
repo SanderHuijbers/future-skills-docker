@@ -48,10 +48,21 @@ def hello_api():
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtiele schaduw */
             }}
             h1 {{
-                font-size: 3.5rem; /* Grotere tekst */
-                color: black; /* Zwarte letters */
+                font-size: 3.5rem;
+                color: black;
                 text-shadow:
-                    -2px -2px 0 #FFF, /* Witte randje */
+                    -2px -2px 0 #FFF,
+                    2px -2px 0 #FFF,
+                    -2px 2px 0 #FFF,
+                    2px 2px 0 #FFF;
+                margin: 0;
+                padding: 0;
+            }}
+            h2 {{
+                font-size: 3.5rem;
+                color: black;
+                text-shadow:
+                    -2px -2px 0 #FFF,
                     2px -2px 0 #FFF,
                     -2px 2px 0 #FFF,
                     2px 2px 0 #FFF;

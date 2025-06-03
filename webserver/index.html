@@ -1,13 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="nl">
 
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Main page</title>
-    <meta name="description" content="">
+    <meta name="description" content="Welkomstpagina van de webserver">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="">
+    <style>
+        body {
+            /* Achtergrondafbeelding */
+            background-image: url('images/webserver-achtergrond.png');
+            background-size: cover; /* Zorgt ervoor dat de afbeelding de hele achtergrond bedekt */
+            background-position: center; /* Centreert de achtergrondafbeelding */
+            background-repeat: no-repeat; /* Voorkomt herhaling van de afbeelding */
+
+            /* Flexbox voor centrering van de inhoud */
+            display: flex;
+            justify-content: center; /* Horizontaal centreren */
+            align-items: center; /* Verticaal centreren */
+            min-height: 100vh; /* Zorgt ervoor dat de body de hele viewport vult */
+            margin: 0; /* Verwijdert standaard marges */
+            font-family: 'Inter', sans-serif; /* Gebruik Inter font */
+        }
+
+        h1 {
+            font-size: 4rem; /* Grotere tekst */
+            color: white; /* Witte letters */
+            text-align: center; /* Tekst centreren binnen de h1 */
+            /* Zwarte rand om de tekst */
+            text-shadow:
+                -2px -2px 0 #000,
+                2px -2px 0 #000,
+                -2px 2px 0 #000,
+                2px 2px 0 #000;
+            padding: 1rem; /* Wat padding rond de tekst */
+            background-color: rgba(0, 0, 0, 0.3); /* Lichte, semi-transparante achtergrond voor leesbaarheid */
+            border-radius: 10px; /* Afgeronde hoeken */
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>

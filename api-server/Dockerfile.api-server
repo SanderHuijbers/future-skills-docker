@@ -11,14 +11,13 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Kopieer de rest van de applicatiebestanden (inclusief app.py en tests/)
+# Kopieer de overige applicatiebestanden
 COPY . .
 
 # Expose de poort waarop de Flask app luistert
 EXPOSE 5000
 
 # HEALTHCHECK instructie
-# BELANGRIJKE CORRECTIE: Pas het pad aan naar /api/health
 # Controleert of de Flask API op /api/health reageert met een 200 OK
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
   CMD curl --fail http://localhost:5000/api/health || exit 1

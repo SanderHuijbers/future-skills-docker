@@ -25,5 +25,4 @@ def test_hello_api(client):
     response = client.get('/api')
     assert response.status_code == 200
     # Controleer of de respons 'Hello from API!' bevat
-    # Let op: de hostname zal variëren in de testomgeving, dus test alleen op het vaste deel.
     assert b'Hello from API!' in response.data

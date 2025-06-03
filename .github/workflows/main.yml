@@ -30,7 +30,7 @@ jobs:
           yamllint docker-compose.yml
 
       - name: Lint Dockerfiles (Hadolint)
-        # Download Hadolint en lint de Dockerfiles
+        # Installeer Hadolint en lint de Dockerfiles
         run: |
           wget -qO- https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 > hadolint
           chmod +x hadolint
@@ -115,7 +115,6 @@ jobs:
           BASE_IMAGE_NAME="ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')"
 
           # Genereer de tags als een bash array, gesplitst op nieuwe regels
-          # BELANGRIJKE FIX: Gebruik readarray om de newline-gescheiden output correct te splitsen
           readarray -t array_of_tags <<< "${{ steps.meta.outputs.tags }}"
 
           # Functie om een Docker image te bouwen en te pushen met alle relevante tags

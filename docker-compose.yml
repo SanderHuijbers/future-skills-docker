@@ -5,7 +5,6 @@
 
 services:
   # Statische webserver service
-  # Servicenaam moet een letterlijke string zijn, geen variabele.
   webserver:
     image: my-web-server2-alpine
     # Containernaam variabele
@@ -18,7 +17,6 @@ services:
     restart: always
 
   # Backend API applicatie service
-  # Servicenaam moet een letterlijke string zijn, geen variabele.
   api-server:
     image: my-api-server
     # Containernaam variabele
@@ -38,7 +36,6 @@ services:
       #   condition: on-failure
 
   # Nginx reverse proxy service
-  # Servicenaam moet een letterlijke string zijn, geen variabele.
   reverse-proxy:
     image: my-reverse-proxy
     # Containernaam variabele
@@ -47,8 +44,7 @@ services:
       context: ./reverse-proxy
       dockerfile: Dockerfile.reverse-proxy
     ports:
-      - "${REVERSE_PROXY_HTTP_PORT}:${REVERSE_PROXY_HTTP_PORT}"  # Poort 80
-      # Poort 443
+      - "${REVERSE_PROXY_HTTP_PORT}:${REVERSE_PROXY_HTTP_PORT}"
       - "${REVERSE_PROXY_HTTPS_PORT}:${REVERSE_PROXY_HTTPS_PORT}"
     volumes:
       - ./reverse-proxy/reverse_proxy.conf:/etc/nginx/nginx.conf:ro
@@ -91,13 +87,12 @@ services:
     image: grafana/grafana:10.2.3
     container_name: grafana
     ports:
-      - "3000:3000"
+      - 3000:3000
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasource.yml
-      #  - grafana-data:/var/lib/grafana
     depends_on:
       - loki
 
