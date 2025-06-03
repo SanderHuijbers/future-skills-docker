@@ -63,7 +63,8 @@ def hello_api():
     </head>
     <body>
         <div class="container">
-            <h1>Hello from API! Running on host: {CONTAINER_HOSTNAME}</h1>
+            <h1>Hello from API!</h1>
+            <h2>This is the current container ID: {CONTAINER_HOSTNAME}</h2>
         </div>
     </body>
     </html>
