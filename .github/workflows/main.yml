@@ -5,6 +5,7 @@ name: Docker Compose CI
 
 permissions:
   contents: read
+  packages: write
 
 on:
   push:
