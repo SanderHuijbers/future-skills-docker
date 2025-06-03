@@ -111,7 +111,7 @@ jobs:
       - name: Build and push services to GHCR
         run: |
           # Basis Image naam (bijv. ghcr.io/sanderhuijbers/future-skills-docker)
-          BASE_IMAGE_NAME="ghcr.io/${{ github.repository }}"
+          BASE_IMAGE_NAME="ghcr.io/${{ github.repository,, }}"
 
           # Genereer de tags als een bash array, gesplitst op nieuwe regels
           # BELANGRIJKE FIX: Gebruik readarray om de newline-gescheiden output correct te splitsen
