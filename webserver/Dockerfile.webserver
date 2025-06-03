@@ -13,7 +13,8 @@ COPY images/ /usr/share/nginx/html/images/
 
 # Permissies voor de HTML-pagina en de images map
 RUN chmod 644 /usr/share/nginx/html/index.html && \
-    chmod -R 644 /usr/share/nginx/html/images/
+    chmod 755 /usr/share/nginx/html/images/ && \
+    chmod 644 /usr/share/nginx/html/images/*
 
 # Kopieer de custom Nginx configuratie
 COPY webserver.conf /etc/nginx/http.d/default.conf
