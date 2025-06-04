@@ -16,15 +16,25 @@ Deze repository bevat Docker-bestanden en instructies voor het opzetten van een 
     ```
 2. Navigeer naar de map scripts:
     ```bash
-    cd future-skills-docker/scripts
+    cd future-skills-docker
     ```
 3. Voer start.sh uit om een certificaat te genereren en de containers te starten.
    ```bash
-   ./start.sh
+   ./script/start.sh
    ```
-4. Voer stop.sh uit om de containers te stopen.
+4. Testen door naar de volgende url`s te gaan:
+   ```http
+      # Webserver
+      https://localhost
+
+      # API server
+      https://localhost/api
+
+      # Grafana
+      https://localhost:3000 ```
+5. Voer stop.sh uit om de containers te stopen.
    ```bash
-   ./stop.sh
+   ./scripts/stop.sh
    ```
 
 ## Contributie
