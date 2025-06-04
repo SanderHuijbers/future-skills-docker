@@ -22,7 +22,7 @@ Deze repository bevat Docker-bestanden en instructies voor het opzetten van een 
    ```bash
    ./script/start.sh
    ```
-4. Testen door naar de volgende url`s te gaan:
+4. Testen door naar 1 van de volgende url`s te gaan:
    ```http
       # Webserver
       https://localhost
@@ -31,7 +31,9 @@ Deze repository bevat Docker-bestanden en instructies voor het opzetten van een 
       https://localhost/api
 
       # Grafana
-      https://localhost:3000 ```
+      https://localhost:3000
+   ```
+
 5. Voer stop.sh uit om de containers te stopen.
    ```bash
    ./scripts/stop.sh
